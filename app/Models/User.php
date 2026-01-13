@@ -10,7 +10,12 @@ use Illuminate\Notifications\Notifiable;
 class User extends Authenticatable
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasFactory, Notifiable;
+    use HasFactory, Notifiable, \Spatie\Permission\Traits\HasRoles;
+
+    public function userInfo(): \Illuminate\Database\Eloquent\Relations\HasOne
+    {
+        return $this->hasOne(UserInfo::class);
+    }
 
     /**
      * The attributes that are mass assignable.
