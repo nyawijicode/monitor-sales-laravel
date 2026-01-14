@@ -69,5 +69,7 @@ class DatabaseSeeder extends Seeder
                 'position_id' => $positionId,
             ]
         );
+
+        $this->call(UserSeeder::class);
     }
 }
