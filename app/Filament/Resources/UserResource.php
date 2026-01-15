@@ -144,9 +144,27 @@ class UserResource extends Resource
                     ->searchable(),
                 Tables\Columns\TextColumn::make('email')
                     ->searchable(),
+                Tables\Columns\TextColumn::make('roles.name')
+                    ->badge()
+                    ->label('Role')
+                    ->searchable(),
+                Tables\Columns\TextColumn::make('userInfo.company.name')
+                    ->label('Company')
+                    ->searchable()
+                    ->toggleable(isToggledHiddenByDefault: true),
+                Tables\Columns\TextColumn::make('userInfo.division.name')
+                    ->label('Division')
+                    ->searchable()
+                    ->toggleable(isToggledHiddenByDefault: true),
+                Tables\Columns\TextColumn::make('userInfo.position.name')
+                    ->label('Position')
+                    ->searchable(),
+                Tables\Columns\TextColumn::make('branches.name')
+                    ->label('Branches')
+                    ->badge()
+                    ->searchable(),
                 Tables\Columns\TextColumn::make('created_at')
                     ->dateTime()
-
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
