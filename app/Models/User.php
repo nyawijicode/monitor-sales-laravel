@@ -7,10 +7,18 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
-class User extends Authenticatable
+use Filament\Models\Contracts\FilamentUser;
+use Filament\Panel;
+
+class User extends Authenticatable implements FilamentUser
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
     use HasFactory, Notifiable, \Spatie\Permission\Traits\HasRoles;
+
+    public function canAccessPanel(Panel $panel): bool
+    {
+        return $this->is_active;
+    }
 
     public function userInfo(): \Illuminate\Database\Eloquent\Relations\HasOne
     {
@@ -27,6 +35,8 @@ class User extends Authenticatable
         'email',
         'username',
         'password',
+        'is_active',
+        'atasan_id', // Also creating this missing fillable if need be, but focusing on is_active
     ];
 
     /**

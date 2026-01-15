@@ -50,6 +50,9 @@ class UserResource extends Resource
                             ->relationship('atasan', 'name')
                             ->searchable()
                             ->preload(),
+                        Forms\Components\Toggle::make('is_active')
+                            ->required()
+                            ->default(true),
                     ])->columns(2),
 
                 Section::make('Organization & Access')
@@ -195,10 +198,14 @@ class UserResource extends Resource
                     ->searchable(),
                 Tables\Columns\TextColumn::make('email')
                     ->searchable(),
+                Tables\Columns\IconColumn::make('is_active')
+                    ->boolean()
+                    ->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('roles.name')
                     ->badge()
                     ->label('Role')
-                    ->searchable(),
+                    ->searchable()
+                    ->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('userInfo.company.name')
                     ->label('Company')
                     ->searchable()
@@ -214,6 +221,10 @@ class UserResource extends Resource
                     ->label('Branches')
                     ->badge()
                     ->searchable(),
+                Tables\Columns\TextColumn::make('cities.name')
+                    ->label('Area')
+                    ->badge()
+                    ->searchable(),
                 Tables\Columns\TextColumn::make('created_at')
                     ->dateTime()
                     ->toggleable(isToggledHiddenByDefault: true),
@@ -222,6 +233,7 @@ class UserResource extends Resource
                     ->disk('public')
                     ->size(40)
                     ->circular(),
+
             ])
             ->filters([
                 //

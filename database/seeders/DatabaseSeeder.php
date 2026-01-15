@@ -45,6 +45,7 @@ class DatabaseSeeder extends Seeder
             'name' => 'Super Admin',
             'username' => 'admin',
             'password' => Hash::make('password'),
+            'is_active' => true,
         ]);
 
         // Assign Role if not exists

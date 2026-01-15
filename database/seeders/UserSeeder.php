@@ -52,6 +52,7 @@ class UserSeeder extends Seeder
                     'username' => $username,
                     'email' => $email,
                     'password' => $password,
+                    'is_active' => true,
                 ]);
 
                 // Determine Role based on Position
