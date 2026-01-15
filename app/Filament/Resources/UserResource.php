@@ -14,6 +14,7 @@ use Filament\Forms\Get;
 use Filament\Forms\Set;
 use Illuminate\Database\Eloquent\Builder;
 use Filament\Forms\Components\Section;
+use Filament\Tables\Columns\ImageColumn;
 
 class UserResource extends Resource
 {
@@ -97,6 +98,51 @@ class UserResource extends Resource
                             ->preload()
                             ->afterStateHydrated(fn($component, $record) => $component->state($record?->userInfo?->position_id))
                             ->saveRelationshipsUsing(fn($record, $state) => $record->userInfo()->updateOrCreate(['user_id' => $record->id], ['position_id' => $state])),
+                        Forms\Components\FileUpload::make('signature_attachment')
+                            ->label('Signature / Tanda Tangan')
+                            ->directory('signatures')
+                            ->image()
+                            ->imageEditor()
+                            ->dehydrated(false)
+                            ->afterStateHydrated(function ($component, $record) {
+                                // Reload relation to ensure fresh data
+                                $record->load('userInfo');
+                                $signature = $record->userInfo?->signature;
+
+                                if (!$signature) {
+                                    $component->state([]);
+                                    return;
+                                }
+
+                                // Handle if saved as JSON array/object string accidentally
+                                if (str_starts_with($signature, '[') || str_starts_with($signature, '{')) {
+                                    $decoded = json_decode($signature, true);
+                                    if (is_array($decoded)) {
+                                        // Get the first value regardless of key (UUID)
+                                        $path = array_values($decoded)[0] ?? null;
+                                    } else {
+                                        $path = $signature;
+                                    }
+                                } else {
+                                    $path = $signature;
+                                }
+
+                                // FileUpload state must be an array
+                                $component->state([$path]);
+                            })
+                            ->saveRelationshipsUsing(function ($record, $state) {
+                                // Ensure we save a string, not an array
+                                if (is_array($state)) {
+                                    $path = array_values($state)[0] ?? null;
+                                } else {
+                                    $path = $state;
+                                }
+
+                                $record->userInfo()->updateOrCreate(
+                                    ['user_id' => $record->id],
+                                    ['signature' => $path]
+                                );
+                            }),
                     ])->columns(2),
 
                 Section::make('Regional Access')
@@ -166,6 +212,11 @@ class UserResource extends Resource
                 Tables\Columns\TextColumn::make('created_at')
                     ->dateTime()
                     ->toggleable(isToggledHiddenByDefault: true),
+                Tables\Columns\ImageColumn::make('userInfo.signature')
+                    ->label('Signature')
+                    ->disk('public')
+                    ->size(40)
+                    ->circular(),
             ])
             ->filters([
                 //

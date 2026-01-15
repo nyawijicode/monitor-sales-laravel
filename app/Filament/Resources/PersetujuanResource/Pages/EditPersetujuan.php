@@ -1,0 +1,18 @@
+<?php
+
+namespace App\Filament\Resources\PersetujuanResource\Pages;
+
+use App\Filament\Resources\PersetujuanResource;
+use Filament\Resources\Pages\EditRecord;
+
+class EditPersetujuan extends EditRecord
+{
+    protected static string $resource = PersetujuanResource::class;
+
+    protected function getHeaderActions(): array
+    {
+        return [
+            \Filament\Actions\DeleteAction::make(),
+        ];
+    }
+}

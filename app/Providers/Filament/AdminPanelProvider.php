@@ -56,6 +56,16 @@ class AdminPanelProvider extends PanelProvider
             ])
             ->plugins([
                 \BezhanSalleh\FilamentShield\FilamentShieldPlugin::make(),
+            ])
+            ->navigationGroups([
+                \Filament\Navigation\NavigationGroup::make('Organization')
+                    ->collapsed(),
+                \Filament\Navigation\NavigationGroup::make('Region Management')
+                    ->collapsed(),
+                \Filament\Navigation\NavigationGroup::make('Portal Management')
+                    ->collapsed(),
+                \Filament\Navigation\NavigationGroup::make('Pelindung')
+                    ->collapsed(),
             ]);
     }
 }
