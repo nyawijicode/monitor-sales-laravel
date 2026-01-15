@@ -4,75 +4,70 @@ namespace Database\Seeders;
 
 use App\Models\PortalLink;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Str;
 
 class PortalLinkSeeder extends Seeder
 {
+    /**
+     * Run the database seeds.
+     */
     public function run(): void
     {
         $links = [
             [
-                'title' => 'Chatbot Sales',
-                'description' => 'Chatbot Sales digunakan untuk memonitor aktivitas sales. Menampilkan status aktivitas seperti "Visit", "Plan", dan "Lead," serta informasi tentang sales, pelanggan, dan wilayah.',
-                'url' => '/sales',
-                'badge_text' => 'Chatbot Sales',
-                'icon' => 'CH',
+                'title' => 'Akunting Portal',
+                'url' => '/akunting',
+                'icon' => 'heroicon-o-calculator',
+                'badge_text' => 'Finance',
+                'badge_color' => 'success',
+                'description' => 'Manage financial records, invoices, and expenses.',
                 'sort_order' => 1,
             ],
             [
-                'title' => 'RAB Online',
-                'description' => 'RAB Online digunakan untuk membuat pengajuan RAB (Rencana Anggaran Biaya). Pengguna diminta untuk memilih jenis RAB yang akan diajukan.',
-                'url' => '#',
-                'badge_text' => 'RAB Online',
-                'icon' => 'RA',
+                'title' => 'Gudang Portal',
+                'url' => '/gudang',
+                'icon' => 'heroicon-o-archive-box',
+                'badge_text' => 'Inventory',
+                'badge_color' => 'warning',
+                'description' => 'Monitor stock levels, manage warehouses, and track shipments.',
                 'sort_order' => 2,
             ],
             [
-                'title' => 'Form Peminjaman Barang Pusat',
-                'description' => 'Form Peminjaman Barang Pusat. Kini anda dapat melakukan pengajuan peminjaman barang lebih mudah dengan menggunakan Program Approval.',
-                'url' => '/gudang',
-                'badge_text' => 'FPB', // From image roughly
-                'icon' => 'FP',
+                'title' => 'Sales Portal',
+                'url' => '/sales',
+                'icon' => 'heroicon-o-presentation-chart-line',
+                'badge_text' => 'Sales',
+                'badge_color' => 'primary',
+                'description' => 'Track sales performance, manage leads, and view reports.',
                 'sort_order' => 3,
             ],
             [
-                'title' => 'Form Pickup',
-                'description' => 'FORM PICK UP digunakan untuk mengumpulkan data permintaan pengambilan barang dari vendor, mencakup informasi email, nama vendor, detail tagihan, dll.',
-                'url' => '#',
-                'badge_text' => 'Form Pickup',
-                'icon' => 'PI',
-                'sort_order' => 4,
-            ],
-            [
-                'title' => 'Sistem QC',
-                'description' => 'Sistem QC digunakan untuk mengelola proses Quality Control barang. Sistem ini mengambil daftar barang dari SAP, membagi tugas QC kepada teknisi.',
+                'title' => 'Teknisi Portal',
                 'url' => '/teknisi',
-                'badge_text' => 'Sistem QC',
-                'icon' => 'QC',
-                'sort_order' => 5,
-            ],
-            [
-                'title' => 'Biaya SAP',
-                'description' => 'Sistem Biaya SAP digunakan untuk mengelola proses pengajuan vendor yang telah disetujui dan sesuai kesepakatan.',
-                'url' => '/akunting',
-                'badge_text' => 'Biaya SAP',
-                'icon' => 'BI',
-                'sort_order' => 6,
-            ],
-            [
-                'title' => 'Kuesioner SAP',
-                'description' => 'Form Penilaian Karyawan lintas divisi, yang digunakan untuk menilai kinerja seluruh divisi yang terkait dalam pekerjaan sehari-hari.',
-                'url' => '#',
-                'badge_text' => 'Kuesioner SAP',
-                'icon' => 'KU',
-                'sort_order' => 7,
+                'icon' => 'heroicon-o-wrench-screwdriver',
+                'badge_text' => 'Technical',
+                'badge_color' => 'info',
+                'description' => 'Manage technical support tickets, installations, and maintenance.',
+                'sort_order' => 4,
             ],
         ];
 
         foreach ($links as $link) {
             PortalLink::updateOrCreate(
-                ['title' => $link['title']],
-                array_merge($link, ['slug' => \Illuminate\Support\Str::slug($link['title'])])
+                ['url' => $link['url']], // Use URL as unique identifier to avoid duplicates
+                [
+                    'title' => $link['title'],
+                    'slug' => Str::slug($link['title']),
+                    'description' => $link['description'],
+                    'icon' => $link['icon'],
+                    'badge_text' => $link['badge_text'],
+                    'badge_color' => $link['badge_color'],
+                    'sort_order' => $link['sort_order'],
+                    'is_active' => true,
+                ]
             );
         }
+
+        $this->command->info('Portal Links seeded.');
     }
 }
