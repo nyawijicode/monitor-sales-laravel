@@ -26,7 +26,7 @@ class SalesPanelProvider extends PanelProvider
             ->id('sales')
             ->path('sales')
             ->homeUrl('/')
-            ->sidebarCollapsibleOnDesktop()
+            ->topNavigation()
             ->maxContentWidth('full')
             ->login(\App\Filament\Pages\Auth\CustomLogin::class)
             ->colors([
