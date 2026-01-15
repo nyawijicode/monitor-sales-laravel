@@ -92,11 +92,10 @@ class PortalLinkResource extends Resource
                 Tables\Columns\IconColumn::make('is_active')
                     ->boolean(),
                 Tables\Columns\TextColumn::make('sort_order')
-                    ->numeric()
-                    ->sortable(),
+                    ->numeric(),
                 Tables\Columns\TextColumn::make('created_at')
                     ->dateTime()
-                    ->sortable()
+
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([

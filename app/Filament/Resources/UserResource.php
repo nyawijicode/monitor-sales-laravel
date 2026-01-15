@@ -106,7 +106,16 @@ class UserResource extends Resource
                             ->relationship('branches', 'name')
                             ->multiple()
                             ->preload()
-                            ->searchable(),
+                            ->searchable()
+                            ->saveRelationshipsUsing(function ($record, $state) {
+                                $record->branches()->sync($state);
+                                // Update UserInfo with the first branch (Primary Branch)
+                                $firstBranchId = !empty($state) ? $state[0] : null;
+                                $record->userInfo()->updateOrCreate(
+                                    ['user_id' => $record->id],
+                                    ['branch_id' => $firstBranchId]
+                                );
+                            }),
                         Forms\Components\Select::make('provinces')
                             ->label('Provinces')
                             ->relationship('provinces', 'name')
@@ -137,7 +146,7 @@ class UserResource extends Resource
                     ->searchable(),
                 Tables\Columns\TextColumn::make('created_at')
                     ->dateTime()
-                    ->sortable()
+
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
