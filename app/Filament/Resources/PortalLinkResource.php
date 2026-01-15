@@ -23,48 +23,51 @@ class PortalLinkResource extends Resource
     {
         return $form
             ->schema([
-                Forms\Components\TextInput::make('title')
-                    ->required()
-                    ->live(onBlur: true)
-                    ->afterStateUpdated(fn(string $operation, $state, Forms\Set $set) => $operation === 'create' ? $set('slug', Str::slug($state)) : null),
-                Forms\Components\TextInput::make('slug')
-                    ->disabled()
-                    ->dehydrated()
-                    ->required()
-                    ->unique(PortalLink::class, 'slug', ignoreRecord: true),
-                Forms\Components\TextInput::make('url')
-                    ->required()
-                    ->label('URL')
-                    ->helperText('Start with http:// for external links or / for internal paths (e.g. /teknisi)'),
-                Forms\Components\Textarea::make('description')
-                    ->columnSpanFull(),
-                Forms\Components\TextInput::make('icon')
-                    ->label('Icon Name (Heroicons)')
-                    ->helperText('e.g. heroicon-o-home')
-                    ->default('heroicon-o-link'),
-                // Alternatively use FileUpload if user wants images
-                // ->image(),
-                Forms\Components\Grid::make(3)
+                Forms\Components\Section::make('Link Details')
                     ->schema([
-                        Forms\Components\TextInput::make('badge_text'),
-                        Forms\Components\Select::make('badge_color')
-                            ->options([
-                                'primary' => 'Primary',
-                                'secondary' => 'Secondary',
-                                'success' => 'Success',
-                                'danger' => 'Danger',
-                                'warning' => 'Warning',
-                                'info' => 'Info',
-                                'gray' => 'Gray',
-                            ])
-                            ->default('primary'),
-                        Forms\Components\TextInput::make('sort_order')
-                            ->numeric()
-                            ->default(0),
+                        Forms\Components\TextInput::make('title')
+                            ->required()
+                            ->live(onBlur: true)
+                            ->afterStateUpdated(fn(string $operation, $state, Forms\Set $set) => $operation === 'create' ? $set('slug', Str::slug($state)) : null),
+                        Forms\Components\TextInput::make('slug')
+                            ->disabled()
+                            ->dehydrated()
+                            ->required()
+                            ->unique(PortalLink::class, 'slug', ignoreRecord: true),
+                        Forms\Components\TextInput::make('url')
+                            ->required()
+                            ->label('URL')
+                            ->helperText('Start with http:// for external links or / for internal paths (e.g. /teknisi)'),
+                        Forms\Components\Textarea::make('description')
+                            ->columnSpanFull(),
+                        Forms\Components\TextInput::make('icon')
+                            ->label('Icon Name (Heroicons)')
+                            ->helperText('e.g. heroicon-o-home')
+                            ->default('heroicon-o-link'),
+                        // Alternatively use FileUpload if user wants images
+                        // ->image(),
+                        Forms\Components\Grid::make(3)
+                            ->schema([
+                                Forms\Components\TextInput::make('badge_text'),
+                                Forms\Components\Select::make('badge_color')
+                                    ->options([
+                                        'primary' => 'Primary',
+                                        'secondary' => 'Secondary',
+                                        'success' => 'Success',
+                                        'danger' => 'Danger',
+                                        'warning' => 'Warning',
+                                        'info' => 'Info',
+                                        'gray' => 'Gray',
+                                    ])
+                                    ->default('primary'),
+                                Forms\Components\TextInput::make('sort_order')
+                                    ->numeric()
+                                    ->default(0),
+                            ]),
+                        Forms\Components\Toggle::make('is_active')
+                            ->required()
+                            ->default(true),
                     ]),
-                Forms\Components\Toggle::make('is_active')
-                    ->required()
-                    ->default(true),
             ]);
     }
 

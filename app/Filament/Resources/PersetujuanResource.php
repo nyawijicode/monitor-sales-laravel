@@ -23,28 +23,35 @@ class PersetujuanResource extends Resource
     {
         return $form
             ->schema([
-                Forms\Components\Select::make('user_id')
-                    ->label('Requester (User)')
-                    ->relationship('user', 'name')
-                    ->searchable()
-                    ->preload()
-                    ->required(),
-                Forms\Components\Select::make('company_id')
-                    ->label('Company Context')
-                    ->relationship('company', 'name')
-                    ->required(),
-                Forms\Components\Repeater::make('approvers')
-                    ->relationship()
+                Forms\Components\Section::make('Approval Information')
                     ->schema([
                         Forms\Components\Select::make('user_id')
-                            ->label('Approver')
-                            ->options(User::pluck('name', 'id'))
+                            ->label('Requester (User)')
+                            ->relationship('user', 'name')
                             ->searchable()
+                            ->preload()
                             ->required(),
-                    ])
-                    ->orderColumn('sort_order')
-                    ->defaultItems(1)
-                    ->columnSpanFull(),
+                        Forms\Components\Select::make('company_id')
+                            ->label('Company Context')
+                            ->relationship('company', 'name')
+                            ->required(),
+                    ])->columns(2),
+
+                Forms\Components\Section::make('Workflow Configuration')
+                    ->schema([
+                        Forms\Components\Repeater::make('approvers')
+                            ->relationship()
+                            ->schema([
+                                Forms\Components\Select::make('user_id')
+                                    ->label('Approver')
+                                    ->options(User::pluck('name', 'id'))
+                                    ->searchable()
+                                    ->required(),
+                            ])
+                            ->orderColumn('sort_order')
+                            ->defaultItems(1)
+                            ->columnSpanFull(),
+                    ]),
             ]);
     }
 

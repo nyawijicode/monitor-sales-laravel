@@ -24,14 +24,17 @@ class CityResource extends Resource
     {
         return $form
             ->schema([
-                Forms\Components\Select::make('province_id')
-                    ->relationship('province', 'name')
-                    ->required(),
-                Forms\Components\TextInput::make('name')
-                    ->required()
-                    ->maxLength(255),
-                Forms\Components\TextInput::make('alt_name')
-                    ->maxLength(255),
+                Forms\Components\Section::make('City Details')
+                    ->schema([
+                        Forms\Components\Select::make('province_id')
+                            ->relationship('province', 'name')
+                            ->required(),
+                        Forms\Components\TextInput::make('name')
+                            ->required()
+                            ->maxLength(255),
+                        Forms\Components\TextInput::make('alt_name')
+                            ->maxLength(255),
+                    ]),
             ]);
     }
 

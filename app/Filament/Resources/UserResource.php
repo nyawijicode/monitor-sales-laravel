@@ -105,6 +105,11 @@ class UserResource extends Resource
                             ->imageEditor()
                             ->dehydrated(false)
                             ->afterStateHydrated(function ($component, $record) {
+                                if (!$record) {
+                                    $component->state([]);
+                                    return;
+                                }
+
                                 // Reload relation to ensure fresh data
                                 $record->load('userInfo');
                                 $signature = $record->userInfo?->signature;

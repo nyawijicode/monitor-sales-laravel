@@ -24,11 +24,14 @@ class ProvinceResource extends Resource
     {
         return $form
             ->schema([
-                Forms\Components\TextInput::make('name')
-                    ->required()
-                    ->maxLength(255),
-                Forms\Components\TextInput::make('alt_name')
-                    ->maxLength(255),
+                Forms\Components\Section::make('Province Details')
+                    ->schema([
+                        Forms\Components\TextInput::make('name')
+                            ->required()
+                            ->maxLength(255),
+                        Forms\Components\TextInput::make('alt_name')
+                            ->maxLength(255),
+                    ]),
             ]);
     }
 
