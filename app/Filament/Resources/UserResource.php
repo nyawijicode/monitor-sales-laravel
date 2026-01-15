@@ -205,7 +205,13 @@ class UserResource extends Resource
                     ->badge()
                     ->label('Role')
                     ->searchable()
-                    ->toggleable(isToggledHiddenByDefault: true),
+                    ->toggleable(isToggledHiddenByDefault: true)
+                    ->color(fn(string $state): string => match ($state) {
+                        'Super Admin' => 'danger',
+                        'Manager' => 'warning',
+                        'Staff' => 'info',
+                        default => 'primary',
+                    }),
                 Tables\Columns\TextColumn::make('userInfo.company.name')
                     ->label('Company')
                     ->searchable()
@@ -220,11 +226,20 @@ class UserResource extends Resource
                 Tables\Columns\TextColumn::make('branches.name')
                     ->label('Branches')
                     ->badge()
-                    ->searchable(),
+                    ->searchable()
+                    ->color(static function (string $state): string {
+                        $colors = ['primary', 'success', 'warning', 'danger', 'info', 'gray'];
+                        // Use a hash of the string to pick a consistent color
+                        return $colors[crc32($state) % count($colors)];
+                    }),
                 Tables\Columns\TextColumn::make('cities.name')
                     ->label('Area')
                     ->badge()
-                    ->searchable(),
+                    ->searchable()
+                    ->color(static function (string $state): string {
+                        $colors = ['primary', 'success', 'warning', 'danger', 'info', 'gray'];
+                        return $colors[crc32($state) % count($colors)];
+                    }),
                 Tables\Columns\TextColumn::make('created_at')
                     ->dateTime()
                     ->toggleable(isToggledHiddenByDefault: true),
