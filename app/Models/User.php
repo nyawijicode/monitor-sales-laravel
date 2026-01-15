@@ -51,4 +51,29 @@ class User extends Authenticatable
             'password' => 'hashed',
         ];
     }
+
+    public function provinces(): \Illuminate\Database\Eloquent\Relations\BelongsToMany
+    {
+        return $this->belongsToMany(Province::class);
+    }
+
+    public function cities(): \Illuminate\Database\Eloquent\Relations\BelongsToMany
+    {
+        return $this->belongsToMany(City::class);
+    }
+
+    public function branches(): \Illuminate\Database\Eloquent\Relations\BelongsToMany
+    {
+        return $this->belongsToMany(Branch::class, 'branch_user');
+    }
+
+    public function atasan(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(User::class, 'atasan_id');
+    }
+
+    public function bawahan(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(User::class, 'atasan_id');
+    }
 }
