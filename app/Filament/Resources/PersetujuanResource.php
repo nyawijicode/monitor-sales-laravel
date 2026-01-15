@@ -61,12 +61,10 @@ class PersetujuanResource extends Resource
             ->columns([
                 Tables\Columns\TextColumn::make('user.name')
                     ->label('Requester')
-                    ->searchable()
-                    ->sortable(),
+                    ->searchable(),
                 Tables\Columns\TextColumn::make('company.name')
                     ->label('Company')
-                    ->searchable()
-                    ->sortable(),
+                    ->searchable(),
                 Tables\Columns\TextColumn::make('approvers.user.name')
                     ->label('Approvers')
                     ->listWithLineBreaks()
