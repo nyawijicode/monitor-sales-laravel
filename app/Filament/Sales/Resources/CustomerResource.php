@@ -48,13 +48,7 @@ class CustomerResource extends Resource
                             ->validationMessages([
                                 'unique' => 'Nama instansi/perusahaan ini sudah terdaftar. Untuk cabang, tambahkan nama cabang di akhir (misal: PT ABC Cabang Jakarta)',
                             ])
-                            ->maxLength(255)
-                            ->columnSpanFull(),
-                        Forms\Components\Textarea::make('alamat')
-                            ->label('Alamat')
-                            ->required()
-                            ->rows(3)
-                            ->columnSpanFull(),
+                            ->maxLength(255),
                         Forms\Components\Select::make('city_id')
                             ->label('Wilayah')
                             ->relationship('city', 'name')
@@ -63,6 +57,12 @@ class CustomerResource extends Resource
                             ->getOptionLabelFromRecordUsing(fn($record) => $record->province->name . ' - ' . $record->name)
                             ->nullable()
                             ->helperText('Pilih kota/kabupaten wilayah customer'),
+                        Forms\Components\Textarea::make('alamat')
+                            ->label('Alamat')
+                            ->required()
+                            ->rows(3)
+                            ->columnSpanFull(),
+
                     ])
                     ->columns(2),
 
