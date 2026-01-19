@@ -129,7 +129,6 @@ class RealisasiVisitResource extends Resource
                 Tables\Columns\TextColumn::make('visit_number')
                     ->label('Nomor Visit')
                     ->searchable()
-                    ->sortable()
                     ->copyable()
                     ->weight('bold'),
                 Tables\Columns\TextColumn::make('customer.nama_instansi')
@@ -139,12 +138,15 @@ class RealisasiVisitResource extends Resource
                 Tables\Columns\TextColumn::make('visit_date')
                     ->label('Tanggal Realisasi')
                     ->date('d/m/Y')
-                    ->sortable()
                     ->placeholder('-'),
                 Tables\Columns\TextColumn::make('activity.name')
                     ->label('Aktivitas')
                     ->badge()
                     ->placeholder('-'),
+                Tables\Columns\TextColumn::make('statusAwal.name')
+                    ->label('Status Awal')
+                    ->badge()
+                    ->color('warning'),
                 Tables\Columns\TextColumn::make('statusAkhir.name')
                     ->label('Status Akhir')
                     ->badge()
@@ -189,7 +191,7 @@ class RealisasiVisitResource extends Resource
                     Tables\Actions\DeleteBulkAction::make(),
                 ]),
             ])
-            ->defaultSort('visit_date', 'desc');
+            ->defaultSort('visit_number', 'desc');
     }
 
     public static function getRelations(): array

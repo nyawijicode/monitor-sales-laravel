@@ -116,7 +116,6 @@ class RencanaVisitResource extends Resource
                 Tables\Columns\TextColumn::make('visit_number')
                     ->label('Nomor Visit')
                     ->searchable()
-                    ->sortable()
                     ->copyable()
                     ->weight('bold'),
                 Tables\Columns\TextColumn::make('customer.kode_customer')
@@ -135,12 +134,11 @@ class RencanaVisitResource extends Resource
                     ),
                 Tables\Columns\TextColumn::make('visit_plan')
                     ->label('Tanggal Rencana')
-                    ->date('d/m/Y')
-                    ->sortable(),
+                    ->date('d/m/Y'),
                 Tables\Columns\TextColumn::make('statusAwal.name')
                     ->label('Status Awal')
                     ->badge()
-                    ->color('info'),
+                    ->color('warning'),
                 Tables\Columns\IconColumn::make('visit_date')
                     ->label('Terealisasi')
                     ->boolean()
@@ -181,7 +179,7 @@ class RencanaVisitResource extends Resource
                     Tables\Actions\DeleteBulkAction::make(),
                 ]),
             ])
-            ->defaultSort('visit_plan', 'desc');
+            ->defaultSort('visit_number', 'desc');
     }
 
     public static function getRelations(): array

@@ -17,6 +17,7 @@ use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
 use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\StartSession;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
+use Filament\Navigation\NavigationGroup;
 
 class SalesPanelProvider extends PanelProvider
 {
@@ -52,6 +53,11 @@ class SalesPanelProvider extends PanelProvider
             ])
             ->authMiddleware([
                 Authenticate::class,
+            ])
+            ->navigationGroups([
+                NavigationGroup::make('Dasbor')->collapsible(false),
+                NavigationGroup::make('Mapping dan Pipeline')->collapsible(true),
+                NavigationGroup::make('Master Data')->collapsible(true),
             ]);
     }
 }
