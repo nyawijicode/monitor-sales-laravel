@@ -36,6 +36,11 @@ class CustomerResource extends Resource
                             ->dehydrated(false)
                             ->placeholder('Auto-generate: C.000001')
                             ->helperText('Kode akan dibuat otomatis saat menyimpan'),
+                        Forms\Components\Toggle::make('is_active')
+                            ->label('Status Aktif')
+                            ->default(true)
+                            ->inline(false)
+                            ->helperText('Nonaktifkan jika customer sudah tidak aktif'),
                         Forms\Components\TextInput::make('nama_instansi')
                             ->label('Nama Instansi/Perusahaan')
                             ->required()
@@ -43,12 +48,21 @@ class CustomerResource extends Resource
                             ->validationMessages([
                                 'unique' => 'Nama instansi/perusahaan ini sudah terdaftar. Untuk cabang, tambahkan nama cabang di akhir (misal: PT ABC Cabang Jakarta)',
                             ])
-                            ->maxLength(255),
+                            ->maxLength(255)
+                            ->columnSpanFull(),
                         Forms\Components\Textarea::make('alamat')
                             ->label('Alamat')
                             ->required()
                             ->rows(3)
                             ->columnSpanFull(),
+                        Forms\Components\Select::make('city_id')
+                            ->label('Wilayah')
+                            ->relationship('city', 'name')
+                            ->searchable()
+                            ->preload()
+                            ->getOptionLabelFromRecordUsing(fn($record) => $record->province->name . ' - ' . $record->name)
+                            ->nullable()
+                            ->helperText('Pilih kota/kabupaten wilayah customer'),
                     ])
                     ->columns(2),
 
@@ -83,6 +97,13 @@ class CustomerResource extends Resource
                     ->copyable()
                     ->copyMessage('Kode customer berhasil disalin')
                     ->weight('bold'),
+                Tables\Columns\IconColumn::make('is_active')
+                    ->label('Status')
+                    ->boolean()
+                    ->trueIcon('heroicon-o-check-circle')
+                    ->falseIcon('heroicon-o-x-circle')
+                    ->trueColor('success')
+                    ->falseColor('danger'),
                 Tables\Columns\TextColumn::make('nama_instansi')
                     ->label('Nama Instansi/Perusahaan')
                     ->searchable(),
@@ -91,6 +112,10 @@ class CustomerResource extends Resource
                     ->searchable()
                     ->wrap()
                     ->limit(50),
+                Tables\Columns\TextColumn::make('city.name')
+                    ->label('Wilayah')
+                    ->searchable()
+                    ->formatStateUsing(fn($record) => $record->city ? ($record->city->province->name . ' - ' . $record->city->name) : '-'),
                 Tables\Columns\TextColumn::make('nama_kontak')
                     ->label('Nama Kontak')
                     ->searchable(),
@@ -110,7 +135,13 @@ class CustomerResource extends Resource
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
-                //
+                Tables\Filters\SelectFilter::make('is_active')
+                    ->label('Status')
+                    ->options([
+                        true => 'Aktif',
+                        false => 'Tidak Aktif',
+                    ])
+                    ->default(true),
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),

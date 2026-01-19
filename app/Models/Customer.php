@@ -8,11 +8,17 @@ class Customer extends Model
 {
     protected $fillable = [
         'kode_customer',
+        'is_active',
         'nama_instansi',
         'alamat',
+        'city_id',
         'nama_kontak',
         'telepon',
         'jabatan',
+    ];
+
+    protected $casts = [
+        'is_active' => 'boolean',
     ];
 
     protected static function boot()
@@ -37,5 +43,10 @@ class Customer extends Model
                 $customer->kode_customer = 'C.' . str_pad($newNumber, 6, '0', STR_PAD_LEFT);
             }
         });
+    }
+
+    public function city()
+    {
+        return $this->belongsTo(City::class);
     }
 }
