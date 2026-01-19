@@ -24,6 +24,7 @@ class RencanaVisitResource extends Resource
     protected static ?string $modelLabel = 'Rencana Visit';
 
     protected static ?string $pluralModelLabel = 'Rencana Visit';
+    protected static ?int $navigationSort = 1;
 
     public static function form(Form $form): Form
     {

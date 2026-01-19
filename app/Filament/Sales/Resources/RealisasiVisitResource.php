@@ -26,7 +26,7 @@ class RealisasiVisitResource extends Resource
     protected static ?string $modelLabel = 'Realisasi Visit';
 
     protected static ?string $pluralModelLabel = 'Realisasi Visit';
-
+    protected static ?int $navigationSort = 2;
     public static function form(Form $form): Form
     {
         return $form
@@ -135,6 +135,14 @@ class RealisasiVisitResource extends Resource
                     ->label('Customer')
                     ->searchable()
                     ->limit(30),
+                Tables\Columns\TextColumn::make('customer.city.name')
+                    ->label('Wilayah')
+                    ->formatStateUsing(
+                        fn($record) =>
+                        $record->customer->city ?
+                            $record->customer->city->province->name . ' - ' . $record->customer->city->name : '-'
+                    )
+                    ->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('visit_date')
                     ->label('Tanggal Realisasi')
                     ->date('d/m/Y')
