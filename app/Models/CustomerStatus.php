@@ -11,12 +11,10 @@ class CustomerStatus extends Model
 
     protected $fillable = [
         'name',
-        'order',
         'is_active',
     ];
 
     protected $casts = [
         'is_active' => 'boolean',
-        'order' => 'integer',
     ];
 }

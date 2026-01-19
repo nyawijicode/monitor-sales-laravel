@@ -27,10 +27,6 @@ class CustomerStatusResource extends Resource
                         Forms\Components\TextInput::make('name')
                             ->required()
                             ->maxLength(255),
-                        Forms\Components\TextInput::make('order')
-                            ->required()
-                            ->numeric()
-                            ->default(0),
                         Forms\Components\Toggle::make('is_active')
                             ->required()
                             ->default(true),
@@ -44,17 +40,13 @@ class CustomerStatusResource extends Resource
             ->columns([
                 Tables\Columns\TextColumn::make('name')
                     ->searchable(),
-                Tables\Columns\TextColumn::make('order')
-                    ->numeric(),
                 Tables\Columns\IconColumn::make('is_active')
                     ->boolean(),
                 Tables\Columns\TextColumn::make('created_at')
                     ->dateTime()
-
                     ->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('updated_at')
                     ->dateTime()
-
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
@@ -67,8 +59,7 @@ class CustomerStatusResource extends Resource
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make(),
                 ]),
-            ])
-            ->defaultSort('order', 'asc');
+            ]);
     }
 
     public static function getRelations(): array

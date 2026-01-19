@@ -30,19 +30,16 @@ class MasterDataSeeder extends Seeder
 
         // 2. Customer Statuses
         $customerStatuses = [
-            ['name' => 'Lead', 'order' => 1],
-            ['name' => 'Prospect', 'order' => 2],
-            ['name' => 'Hot Prospect', 'order' => 3],
-            ['name' => 'Deal/PO/SPK', 'order' => 4],
-            ['name' => 'Pending', 'order' => 5],
-            ['name' => 'Lost', 'order' => 6],
+            'Lead',
+            'Prospect',
+            'Hot Prospect',
+            'Deal/PO/SPK',
+            'Pending',
+            'Lost',
         ];
 
         foreach ($customerStatuses as $status) {
-            CustomerStatus::updateOrCreate(
-                ['name' => $status['name']],
-                ['order' => $status['order']]
-            );
+            CustomerStatus::firstOrCreate(['name' => $status]);
         }
 
         $this->command->info('Customer Statuses seeded.');
