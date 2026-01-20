@@ -178,11 +178,11 @@ class RealisasiVisitResource extends Resource
             ->filters([
                 Tables\Filters\Filter::make('belum_realisasi')
                     ->label('Belum Realisasi')
-                    ->query(fn($query) => $query->whereNull('visit_date'))
-                    ->default(),
+                    ->query(fn($query) => $query->whereNull('visit_date')),
                 Tables\Filters\Filter::make('sudah_realisasi')
                     ->label('Sudah Realisasi')
-                    ->query(fn($query) => $query->whereNotNull('visit_date')),
+                    ->query(fn($query) => $query->whereNotNull('visit_date'))
+                    ->default(),
                 Tables\Filters\SelectFilter::make('activity_id')
                     ->label('Tipe Aktivitas')
                     ->relationship('activity', 'name'),
