@@ -102,4 +102,9 @@ class Visit extends Model
     {
         return $this->belongsToMany(User::class, 'visit_participants');
     }
+
+    public function boq(): \Illuminate\Database\Eloquent\Relations\HasOne
+    {
+        return $this->hasOne(\App\Models\BOQ::class);
+    }
 }

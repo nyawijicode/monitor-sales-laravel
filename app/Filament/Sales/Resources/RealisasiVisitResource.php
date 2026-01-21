@@ -191,6 +191,17 @@ class RealisasiVisitResource extends Resource
                     ->relationship('statusAkhir', 'name'),
             ])
             ->actions([
+                Tables\Actions\Action::make('boq')
+                    ->label('BOQ')
+                    ->icon('heroicon-o-document-text')
+                    ->color('primary')
+                    ->hidden(fn($record) => is_null($record->visit_date))
+                    ->url(function ($record) {
+                        if ($record->boq) {
+                            return route('filament.sales.resources.boqs.edit', ['record' => $record->boq->id]);
+                        }
+                        return route('filament.sales.resources.boqs.create', ['visit' => $record->id]);
+                    }),
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\ViewAction::make(),
             ])
