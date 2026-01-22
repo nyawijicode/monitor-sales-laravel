@@ -18,5 +18,14 @@ class CreateBOQ extends CreateRecord
     {
         // Calculate total after items are created
         $this->record->calculateTotal();
+
+        // Auto-create approval workflow
+        $persetujuan = \App\Models\Persetujuan::create([
+            'user_id' => auth()->id(),
+            'company_id' => auth()->user()->company_id ?? 1, // Default to company 1 if not set
+        ]);
+
+        // Link BOQ to persetujuan
+        $this->record->update(['persetujuan_id' => $persetujuan->id]);
     }
 }

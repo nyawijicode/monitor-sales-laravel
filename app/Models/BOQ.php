@@ -13,7 +13,9 @@ class BOQ extends Model
     protected $fillable = [
         'boq_number',
         'visit_id',
+        'company_id',
         'user_id',
+        'persetujuan_id',
         'total_amount',
     ];
 
@@ -89,15 +91,38 @@ class BOQ extends Model
         $this->update(['total_amount' => $total]);
     }
 
+    // Check if BOQ is fully approved
+    public function isFullyApproved(): bool
+    {
+        if (!$this->persetujuan) {
+            return false;
+        }
+
+        // Check if all approvers have approved
+        return $this->persetujuan->approvers()
+            ->where('status', '!=', 'approved')
+            ->doesntExist();
+    }
+
     // Relationships
     public function visit(): BelongsTo
     {
         return $this->belongsTo(Visit::class);
     }
 
+    public function company(): BelongsTo
+    {
+        return $this->belongsTo(\App\Models\Company::class);
+    }
+
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function persetujuan(): BelongsTo
+    {
+        return $this->belongsTo(\App\Models\Persetujuan::class);
     }
 
     public function items(): HasMany

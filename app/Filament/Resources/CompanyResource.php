@@ -26,6 +26,17 @@ class CompanyResource extends Resource
                         Forms\Components\TextInput::make('name')
                             ->required()
                             ->maxLength(255),
+                        Forms\Components\TextArea::make('address')
+                            ->label('Alamat Perusahaan')
+                            ->maxLength(500)
+                            ->nullable(),
+                        Forms\Components\FileUpload::make('logo')
+                            ->label('Logo Perusahaan')
+                            ->image()
+                            ->maxSize(2048)
+                            ->directory('company-logos')
+                            ->visibility('public')
+                            ->helperText('Upload logo perusahaan (max 2MB)'),
                     ]),
             ]);
     }
@@ -34,11 +45,18 @@ class CompanyResource extends Resource
     {
         return $table
             ->columns([
+                Tables\Columns\ImageColumn::make('logo')
+                    ->label('Logo')
+                    ->circular(),
                 Tables\Columns\TextColumn::make('name')
+                    ->searchable(),
+                Tables\Columns\TextColumn::make('address')
+                    ->label('Alamat')
+                    ->limit(30)
+                    ->tooltip(fn($record) => $record->address)
                     ->searchable(),
                 Tables\Columns\TextColumn::make('created_at')
                     ->dateTime()
-
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([

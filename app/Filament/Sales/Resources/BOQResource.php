@@ -42,6 +42,14 @@ class BOQResource extends Resource
                             ->placeholder('Auto-generate: BOQ/000001/I/26')
                             ->helperText('Nomor BOQ akan dibuat otomatis'),
 
+                        Forms\Components\Select::make('company_id')
+                            ->label('Perusahaan')
+                            ->relationship('company', 'name')
+                            ->required()
+                            ->searchable()
+                            ->preload()
+                            ->helperText('Pilih perusahaan untuk BOQ ini'),
+
                         Forms\Components\Hidden::make('visit_id')
                             ->default(fn() => request()->query('visit'))
                             ->required(),
@@ -162,6 +170,10 @@ class BOQResource extends Resource
                     ->counts('items')
                     ->badge()
                     ->color('info'),
+                Tables\Columns\TextColumn::make('items.nama_barang')
+                    ->label('Nama Barang')
+                    ->listWithLineBreaks()
+                    ->bulleted(),
                 Tables\Columns\TextColumn::make('total_amount')
                     ->label('Total')
                     ->money('IDR'),
@@ -177,6 +189,50 @@ class BOQResource extends Resource
                 //
             ])
             ->actions([
+                Tables\Actions\Action::make('preview_pdf')
+                    ->label('Preview PDF')
+                    ->icon('heroicon-o-eye')
+                    ->color('info')
+                    ->modalHeading('Preview RAB PDF')
+                    ->modalWidth('7xl')
+                    ->modalContent(fn($record) => view('filament.modals.boq-pdf-preview', [
+                        'pdfUrl' => route('boq.pdf.preview', $record->id)
+                    ]))
+                    ->modalSubmitAction(false)
+                    ->modalCancelActionLabel('Tutup'),
+
+                Tables\Actions\Action::make('download_pdf')
+                    ->label('Download PDF')
+                    ->icon('heroicon-o-arrow-down-tray')
+                    ->color('success')
+                    ->form([
+                        Forms\Components\Radio::make('type')
+                            ->label('Pilih Tipe PDF')
+                            ->options([
+                                'user' => 'User (Tanpa TTD)',
+                                'internal' => 'Internal (Dengan TTD)',
+                            ])
+                            ->default('user')
+                            ->required()
+                            ->helperText('User: untuk customer. Internal: untuk arsip (hanya jika sudah disetujui)'),
+                    ])
+                    ->action(function ($record, array $data) {
+                        // Check if internal requires approval
+                        if ($data['type'] === 'internal' && !$record->isFullyApproved()) {
+                            \Filament\Notifications\Notification::make()
+                                ->title('BOQ Belum Disetujui')
+                                ->body('Download Internal hanya tersedia setelah semua approver menyetujui BOQ.')
+                                ->danger()
+                                ->send();
+                            return null;
+                        }
+
+                        return redirect()->route('boq.pdf.download', [
+                            'id' => $record->id,
+                            'type' => $data['type']
+                        ]);
+                    }),
+
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\ViewAction::make(),
             ])
@@ -205,6 +261,34 @@ class BOQResource extends Resource
 
     public static function getEloquentQuery(): \Illuminate\Database\Eloquent\Builder
     {
-        return parent::getEloquentQuery()->where('user_id', auth()->id());
+        $userId = auth()->id();
+        $user = auth()->user();
+
+        return parent::getEloquentQuery()
+            ->where(function ($query) use ($userId, $user) {
+                // Show BOQ created by user themselves
+                $query->where('user_id', $userId);
+
+                // OR show BOQ from subordinates (where this user is atasan)
+                $query->orWhereHas('user', function ($q) use ($userId) {
+                    $q->where('atasan_id', $userId);
+                });
+
+                // OR show BOQ from same provinces
+                if ($user->provinces && $user->provinces->count() > 0) {
+                    $provinceIds = $user->provinces->pluck('id')->toArray();
+                    $query->orWhereHas('visit.customer.city.province', function ($q) use ($provinceIds) {
+                        $q->whereIn('provinces.id', $provinceIds);
+                    });
+                }
+
+                // OR show BOQ from same cities
+                if ($user->cities && $user->cities->count() > 0) {
+                    $cityIds = $user->cities->pluck('id')->toArray();
+                    $query->orWhereHas('visit.customer.city', function ($q) use ($cityIds) {
+                        $q->whereIn('cities.id', $cityIds);
+                    });
+                }
+            });
     }
 }

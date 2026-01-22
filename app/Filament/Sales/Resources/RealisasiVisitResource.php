@@ -195,7 +195,7 @@ class RealisasiVisitResource extends Resource
                     ->label('BOQ')
                     ->icon('heroicon-o-document-text')
                     ->color('primary')
-                    ->hidden(fn($record) => is_null($record->visit_date))
+                    ->hidden(fn($record) => is_null($record->visit_date) || $record->boq !== null)
                     ->url(function ($record) {
                         if ($record->boq) {
                             return route('filament.sales.resources.boqs.edit', ['record' => $record->boq->id]);
