@@ -15,7 +15,7 @@ class BOQPdfController extends Controller
             'items',
             'user',
             'company',
-            'persetujuan.approvers',
+            'persetujuan.approvers.user', // Load approvers with their user data
         ])->findOrFail($id);
 
         // Check authorization
@@ -49,7 +49,7 @@ class BOQPdfController extends Controller
             'items',
             'user',
             'company',
-            'persetujuan.approvers',
+            'persetujuan.approvers.user', // Load approvers with their user data
         ])->findOrFail($id);
 
         // Check authorization

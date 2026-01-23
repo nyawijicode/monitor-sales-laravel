@@ -19,13 +19,18 @@ class CreateBOQ extends CreateRecord
         // Calculate total after items are created
         $this->record->calculateTotal();
 
-        // Auto-create approval workflow
-        $persetujuan = \App\Models\Persetujuan::create([
-            'user_id' => auth()->id(),
-            'company_id' => auth()->user()->company_id ?? 1, // Default to company 1 if not set
-        ]);
+        // Auto-select persetujuan based on user and company
+        $companyId = $this->record->company_id;
+        $userId = auth()->id();
 
-        // Link BOQ to persetujuan
-        $this->record->update(['persetujuan_id' => $persetujuan->id]);
+        // Find or create persetujuan for this user + company combination
+        $persetujuan = \App\Models\Persetujuan::where('user_id', $userId)
+            ->where('company_id', $companyId)
+            ->first();
+
+        // If persetujuan exists, link it to BOQ
+        if ($persetujuan) {
+            $this->record->update(['persetujuan_id' => $persetujuan->id]);
+        }
     }
 }

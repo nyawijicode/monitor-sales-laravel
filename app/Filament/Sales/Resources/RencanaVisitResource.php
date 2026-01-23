@@ -9,6 +9,7 @@ use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
+use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Table;
 
 class RencanaVisitResource extends Resource
@@ -96,8 +97,27 @@ class RencanaVisitResource extends Resource
                             ->required()
                             ->native(false)
                             ->displayFormat('d/m/Y')
-                            ->minDate(now())
-                            ->helperText('Pilih tanggal rencana kunjungan'),
+                            ->reactive()
+                            ->helperText('Pilih tanggal rencana kunjungan. Jika memilih hari ini, wajib isi alasan mendadak'),
+
+                        Forms\Components\Textarea::make('urgent_reason')
+                            ->label('Alasan Mendadak')
+                            ->required()
+                            ->rows(3)
+                            ->placeholder('Jelaskan kenapa visit harus dilakukan hari ini')
+                            ->helperText('Wajib diisi untuk visit dadakan (hari ini)')
+                            ->visible(
+                                fn(Forms\Get $get): bool =>
+                                $get('visit_plan') &&
+                                    \Carbon\Carbon::parse($get('visit_plan'))->isToday()
+                            ),
+
+                        Forms\Components\Hidden::make('is_urgent')
+                            ->dehydrateStateUsing(
+                                fn(Forms\Get $get): bool =>
+                                $get('visit_plan') &&
+                                    \Carbon\Carbon::parse($get('visit_plan'))->isToday()
+                            ),
 
                         Forms\Components\TextInput::make('status_awal_display')
                             ->label('Status Customer')
@@ -119,6 +139,13 @@ class RencanaVisitResource extends Resource
                     ->searchable()
                     ->copyable()
                     ->weight('bold'),
+                IconColumn::make('is_urgent')
+                    ->label('Dadakan')
+                    ->boolean()
+                    ->trueIcon('heroicon-o-check-circle')
+                    ->falseIcon('heroicon-o-x-circle')
+                    ->trueColor('success')
+                    ->falseColor('danger'),
                 Tables\Columns\TextColumn::make('customer.kode_customer')
                     ->label('Kode Customer')
                     ->searchable(),
@@ -146,7 +173,7 @@ class RencanaVisitResource extends Resource
                     ->trueIcon('heroicon-o-check-circle')
                     ->falseIcon('heroicon-o-x-circle')
                     ->trueColor('success')
-                    ->falseColor('gray')
+                    ->falseColor('danger')
                     ->getStateUsing(fn($record) => !is_null($record->visit_date)),
                 Tables\Columns\TextColumn::make('user.name')
                     ->label('Dibuat Oleh')

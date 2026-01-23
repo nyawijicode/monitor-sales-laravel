@@ -20,12 +20,15 @@ class Visit extends Model
         'photo',
         'is_join_visit',
         'keterangan',
+        'is_urgent',
+        'urgent_reason',
     ];
 
     protected $casts = [
         'visit_plan' => 'date',
         'visit_date' => 'date',
         'is_join_visit' => 'boolean',
+        'is_urgent' => 'boolean',
     ];
 
     protected static function boot()

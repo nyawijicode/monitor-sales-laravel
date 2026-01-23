@@ -6,28 +6,30 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class PersetujuanApprover extends Model
+class BOQApproval extends Model
 {
     use HasFactory;
 
+    protected $table = 'boq_approvals'; // Fix: Laravel pluralizes BOQApproval incorrectly
+
     protected $fillable = [
-        'persetujuan_id',
+        'boq_id',
         'user_id',
-        'sort_order',
-        'status',
+        'action',
         'notes',
-        'action_at',
     ];
 
-    protected $casts = [
-        'action_at' => 'datetime',
-    ];
-
-    public function persetujuan(): BelongsTo
+    /**
+     * Get the BOQ that this approval belongs to
+     */
+    public function boq(): BelongsTo
     {
-        return $this->belongsTo(Persetujuan::class);
+        return $this->belongsTo(BOQ::class);
     }
 
+    /**
+     * Get the user who performed this approval action
+     */
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);

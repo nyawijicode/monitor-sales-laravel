@@ -11,6 +11,7 @@ use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
+use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Table;
 
 class RealisasiVisitResource extends Resource
@@ -167,6 +168,13 @@ class RealisasiVisitResource extends Resource
                 Tables\Columns\IconColumn::make('is_join_visit')
                     ->label('Join Visit')
                     ->boolean(),
+                IconColumn::make('is_urgent')
+                    ->label('Dadakan')
+                    ->boolean()
+                    ->trueIcon('heroicon-o-check-circle')
+                    ->falseIcon('heroicon-o-x-circle')
+                    ->trueColor('success')
+                    ->falseColor('danger'),
                 Tables\Columns\TextColumn::make('user.name')
                     ->label('Dibuat Oleh')
                     ->toggleable(isToggledHiddenByDefault: true),

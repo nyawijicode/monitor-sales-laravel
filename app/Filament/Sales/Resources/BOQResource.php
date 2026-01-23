@@ -88,6 +88,72 @@ class BOQResource extends Resource
                     ])
                     ->columns(2),
 
+                // Section 1.5: Status Approval (Readonly)
+                Forms\Components\Section::make('Status Approval')
+                    ->schema([
+                        Forms\Components\Placeholder::make('approval_status_display')
+                            ->label('Status')
+                            ->content(function (?BOQ $record): string {
+                                if (!$record) return '🟡 Belum Ada';
+
+                                $status = $record->approval_status;
+                                $progress = $record->getApprovalProgress();
+
+                                return match ($status) {
+                                    'pending' => "🟡 Menunggu Persetujuan ($progress)",
+                                    'approved' => "✅ Disetujui ($progress)",
+                                    'rejected' => '❌ Ditolak',
+                                };
+                            }),
+
+                        Forms\Components\Placeholder::make('approvers_list')
+                            ->label('Daftar Approver')
+                            ->content(function (?BOQ $record): \Illuminate\Support\HtmlString {
+                                if (!$record || !$record->persetujuan) {
+                                    return new \Illuminate\Support\HtmlString('<em>Tidak ada persetujuan</em>');
+                                }
+
+                                $approvers = $record->persetujuan->approvers()->orderBy('sort_order')->get();
+                                $html = '<ul style="margin: 0; padding-left: 20px;">';
+
+                                foreach ($approvers as $approver) {
+                                    $icon = match ($approver->status) {
+                                        'approved' => '✅',
+                                        'rejected' => '❌',
+                                        default => '⏳',
+                                    };
+                                    $statusText = match ($approver->status) {
+                                        'approved' => '<strong style="color: green;">Disetujui</strong>',
+                                        'rejected' => '<strong style="color: red;">Ditolak</strong>',
+                                        default => '<em style="color: gray;">Menunggu</em>',
+                                    };
+                                    $name = $approver->user->name ?? '-';
+                                    $html .= "<li>{$icon} {$name} - {$statusText}</li>";
+                                }
+
+                                $html .= '</ul>';
+                                return new \Illuminate\Support\HtmlString($html);
+                            })
+                            ->visible(fn(?BOQ $record): bool => $record && $record->persetujuan),
+
+                        Forms\Components\Placeholder::make('approved_by_display')
+                            ->label('Disetujui/Ditolak Oleh')
+                            ->content(fn(?BOQ $record): string => $record?->approvedBy?->name ?? '-')
+                            ->visible(fn(?BOQ $record): bool => $record && $record->approval_status !== 'pending'),
+
+                        Forms\Components\Placeholder::make('approved_at_display')
+                            ->label('Waktu')
+                            ->content(fn(?BOQ $record): string => $record?->approved_at?->format('d/m/Y H:i') ?? '-')
+                            ->visible(fn(?BOQ $record): bool => $record && $record->approval_status !== 'pending'),
+
+                        Forms\Components\Placeholder::make('approval_notes_display')
+                            ->label('Keterangan')
+                            ->content(fn(?BOQ $record): string => $record?->approval_notes ?? '-')
+                            ->visible(fn(?BOQ $record): bool => $record && $record->approval_status !== 'pending' && !empty($record->approval_notes)),
+                    ])
+                    ->columns(2)
+                    ->visible(fn(?BOQ $record): bool => $record !== null),
+
                 // Section 2: BOQ/Request Barang
                 Forms\Components\Section::make('BOQ/Request Barang')
                     ->description('Tambahkan item barang yang dibutuhkan')
@@ -177,6 +243,35 @@ class BOQResource extends Resource
                 Tables\Columns\TextColumn::make('total_amount')
                     ->label('Total')
                     ->money('IDR'),
+                Tables\Columns\TextColumn::make('approval_status')
+                    ->label('Status Approval')
+                    ->badge()
+                    ->color(function (BOQ $record): string {
+                        if ($record->approval_status === 'rejected') return 'danger';
+                        if ($record->approval_status === 'approved') return 'success';
+
+                        // Pending - check if partial approval
+                        if ($record->persetujuan) {
+                            $approved = $record->persetujuan->approvers()->where('status', 'approved')->count();
+                            if ($approved > 0) return 'warning'; // Partial approval
+                        }
+                        return 'info'; // No approvals yet
+                    })
+                    ->formatStateUsing(function (BOQ $record): string {
+                        $progress = $record->getApprovalProgress();
+                        return match ($record->approval_status) {
+                            'pending' => "Menunggu ($progress)",
+                            'approved' => "Disetujui ($progress)",
+                            'rejected' => 'Ditolak',
+                        };
+                    }),
+                Tables\Columns\TextColumn::make('approvedBy.name')
+                    ->label('Approval Oleh')
+                    ->toggleable(isToggledHiddenByDefault: true),
+                Tables\Columns\TextColumn::make('approved_at')
+                    ->label('Waktu Approval')
+                    ->dateTime('d/m/Y H:i')
+                    ->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('user.name')
                     ->label('Dibuat Oleh')
                     ->toggleable(isToggledHiddenByDefault: true),
@@ -189,6 +284,105 @@ class BOQResource extends Resource
                 //
             ])
             ->actions([
+                // Approval Actions
+                Tables\Actions\Action::make('approve')
+                    ->label('Setujui')
+                    ->icon('heroicon-o-check-circle')
+                    ->color('success')
+                    ->form([
+                        Forms\Components\Textarea::make('notes')
+                            ->label('Keterangan (Opsional)')
+                            ->rows(3)
+                            ->maxLength(1000),
+                    ])
+                    ->action(function (BOQ $record, array $data) {
+                        if ($record->approve(auth()->id(), $data['notes'] ?? null)) {
+                            \Filament\Notifications\Notification::make()
+                                ->title('BOQ Disetujui')
+                                ->body('BOQ berhasil disetujui.')
+                                ->success()
+                                ->send();
+                        } else {
+                            \Filament\Notifications\Notification::make()
+                                ->title('Gagal Menyetujui')
+                                ->body('Anda tidak memiliki akses untuk menyetujui BOQ ini.')
+                                ->danger()
+                                ->send();
+                        }
+                    })
+                    ->requiresConfirmation()
+                    ->modalHeading('Setujui BOQ')
+                    ->modalDescription('Apakah Anda yakin ingin menyetujui BOQ ini?')
+                    ->visible(
+                        fn(BOQ $record): bool =>
+                        $record->approval_status === 'pending' &&
+                            $record->canBeApproved()
+                    ),
+
+                Tables\Actions\Action::make('reject')
+                    ->label('Tolak')
+                    ->icon('heroicon-o-x-circle')
+                    ->color('danger')
+                    ->form([
+                        Forms\Components\Textarea::make('notes')
+                            ->label('Keterangan (Wajib)')
+                            ->required()
+                            ->rows(3)
+                            ->maxLength(1000)
+                            ->helperText('Jelaskan alasan penolakan BOQ ini'),
+                    ])
+                    ->action(function (BOQ $record, array $data) {
+                        if ($record->reject(auth()->id(), $data['notes'])) {
+                            \Filament\Notifications\Notification::make()
+                                ->title('BOQ Ditolak')
+                                ->body('BOQ berhasil ditolak.')
+                                ->success()
+                                ->send();
+                        } else {
+                            \Filament\Notifications\Notification::make()
+                                ->title('Gagal Menolak')
+                                ->body('Anda tidak memiliki akses untuk menolak BOQ ini.')
+                                ->danger()
+                                ->send();
+                        }
+                    })
+                    ->requiresConfirmation()
+                    ->modalHeading('Tolak BOQ')
+                    ->modalDescription('Apakah Anda yakin ingin menolak BOQ ini?')
+                    ->visible(
+                        fn(BOQ $record): bool =>
+                        $record->approval_status === 'pending' &&
+                            $record->canBeApproved()
+                    ),
+
+                Tables\Actions\Action::make('reset_approval')
+                    ->label('Reset Approval')
+                    ->icon('heroicon-o-arrow-path')
+                    ->color('warning')
+                    ->action(function (BOQ $record) {
+                        if ($record->resetApproval(auth()->id())) {
+                            \Filament\Notifications\Notification::make()
+                                ->title('Approval Direset')
+                                ->body('Status approval BOQ telah direset ke pending.')
+                                ->success()
+                                ->send();
+                        } else {
+                            \Filament\Notifications\Notification::make()
+                                ->title('Gagal Reset')
+                                ->body('Tidak dapat mereset approval BOQ yang masih pending.')
+                                ->danger()
+                                ->send();
+                        }
+                    })
+                    ->requiresConfirmation()
+                    ->modalHeading('Reset Approval')
+                    ->modalDescription('Apakah Anda yakin ingin mereset approval BOQ ini? Status akan kembali ke pending.')
+                    ->visible(
+                        fn(BOQ $record): bool =>
+                        auth()->user()->hasRole('Super Admin') &&
+                            $record->approval_status !== 'pending'
+                    ),
+
                 Tables\Actions\Action::make('preview_pdf')
                     ->label('Preview PDF')
                     ->icon('heroicon-o-eye')
@@ -264,26 +458,36 @@ class BOQResource extends Resource
         $userId = auth()->id();
         $user = auth()->user();
 
+        // Super Admin can see everything - bypass all filters
+        if ($user && $user->hasRole('Super Admin')) {
+            return parent::getEloquentQuery();
+        }
+
         return parent::getEloquentQuery()
             ->where(function ($query) use ($userId, $user) {
-                // Show BOQ created by user themselves
+                // 1. Show BOQ created by user themselves
                 $query->where('user_id', $userId);
 
-                // OR show BOQ from subordinates (where this user is atasan)
+                // 2. Show BOQ from subordinates (where this user is atasan)
                 $query->orWhereHas('user', function ($q) use ($userId) {
                     $q->where('atasan_id', $userId);
                 });
 
-                // OR show BOQ from same provinces
-                if ($user->provinces && $user->provinces->count() > 0) {
+                // 3. Show BOQ that needs approval from this user (CRITICAL FIX!)
+                $query->orWhereHas('persetujuan.approvers', function ($q) use ($userId) {
+                    $q->where('user_id', $userId);
+                });
+
+                // 4. Show BOQ from same provinces
+                if ($user && $user->provinces && $user->provinces->count() > 0) {
                     $provinceIds = $user->provinces->pluck('id')->toArray();
                     $query->orWhereHas('visit.customer.city.province', function ($q) use ($provinceIds) {
                         $q->whereIn('provinces.id', $provinceIds);
                     });
                 }
 
-                // OR show BOQ from same cities
-                if ($user->cities && $user->cities->count() > 0) {
+                // 5. Show BOQ from same cities
+                if ($user && $user->cities && $user->cities->count() > 0) {
                     $cityIds = $user->cities->pluck('id')->toArray();
                     $query->orWhereHas('visit.customer.city', function ($q) use ($cityIds) {
                         $q->whereIn('cities.id', $cityIds);

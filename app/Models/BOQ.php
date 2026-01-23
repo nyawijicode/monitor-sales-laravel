@@ -17,10 +17,15 @@ class BOQ extends Model
         'user_id',
         'persetujuan_id',
         'total_amount',
+        'approval_status',
+        'approval_notes',
+        'approved_at',
+        'approved_by',
     ];
 
     protected $casts = [
         'total_amount' => 'decimal:2',
+        'approved_at' => 'datetime',
     ];
 
     protected static function boot()
@@ -91,17 +96,174 @@ class BOQ extends Model
         $this->update(['total_amount' => $total]);
     }
 
-    // Check if BOQ is fully approved
+    // Check if BOQ is fully approved (ALL approvers must approve)
     public function isFullyApproved(): bool
     {
         if (!$this->persetujuan) {
             return false;
         }
 
-        // Check if all approvers have approved
-        return $this->persetujuan->approvers()
-            ->where('status', '!=', 'approved')
-            ->doesntExist();
+        // Check if ALL approvers have approved
+        $totalApprovers = $this->persetujuan->approvers()->count();
+        $approvedCount = $this->persetujuan->approvers()
+            ->where('status', 'approved')
+            ->count();
+
+        return $totalApprovers > 0 && $totalApprovers === $approvedCount;
+    }
+
+    // Get approval progress (e.g., "2/3 approved")
+    public function getApprovalProgress(): string
+    {
+        if (!$this->persetujuan) {
+            return '0/0';
+        }
+
+        $totalApprovers = $this->persetujuan->approvers()->count();
+        $approvedCount = $this->persetujuan->approvers()
+            ->where('status', 'approved')
+            ->count();
+
+        return "{$approvedCount}/{$totalApprovers}";
+    }
+
+    // Check if current user can approve this BOQ
+    public function canBeApproved(?int $userId = null): bool
+    {
+        $userId = $userId ?? auth()->id();
+
+        // BOQ must not be finalized (rejected)
+        if ($this->approval_status === 'rejected') {
+            return false;
+        }
+
+        // Must have persetujuan
+        if (!$this->persetujuan) {
+            return false;
+        }
+
+        // Check if user is one of the approvers AND hasn't taken action yet
+        $approver = $this->persetujuan->approvers()
+            ->where('user_id', $userId)
+            ->first();
+
+        return $approver && $approver->status === 'pending';
+    }
+
+    // Approve the BOQ by specific approver
+    public function approve(int $userId, ?string $notes = null): bool
+    {
+        if (!$this->canBeApproved($userId)) {
+            return false;
+        }
+
+        // Update specific approver status
+        $approver = $this->persetujuan->approvers()
+            ->where('user_id', $userId)
+            ->first();
+
+        if (!$approver) {
+            return false;
+        }
+
+        $approver->update([
+            'status' => 'approved',
+            'notes' => $notes,
+            'action_at' => now(),
+        ]);
+
+        // Log the approval
+        $this->approvalHistory()->create([
+            'user_id' => $userId,
+            'action' => 'approved',
+            'notes' => $notes,
+        ]);
+
+        // Check if ALL approvers have approved
+        if ($this->isFullyApproved()) {
+            $this->update([
+                'approval_status' => 'approved',
+                'approval_notes' => 'Disetujui oleh semua approver',
+                'approved_at' => now(),
+                'approved_by' => $userId, // Last approver
+            ]);
+        }
+
+        return true;
+    }
+
+    // Reject the BOQ by specific approver
+    public function reject(int $userId, string $notes): bool
+    {
+        if (!$this->canBeApproved($userId)) {
+            return false;
+        }
+
+        // Update specific approver status
+        $approver = $this->persetujuan->approvers()
+            ->where('user_id', $userId)
+            ->first();
+
+        if (!$approver) {
+            return false;
+        }
+
+        $approver->update([
+            'status' => 'rejected',
+            'notes' => $notes,
+            'action_at' => now(),
+        ]);
+
+        // Immediately mark BOQ as rejected (any rejection = rejected)
+        $this->update([
+            'approval_status' => 'rejected',
+            'approval_notes' => $notes,
+            'approved_at' => now(),
+            'approved_by' => $userId,
+        ]);
+
+        // Log the rejection
+        $this->approvalHistory()->create([
+            'user_id' => $userId,
+            'action' => 'rejected',
+            'notes' => $notes,
+        ]);
+
+        return true;
+    }
+
+    // Reset approval (Super Admin only)
+    public function resetApproval(int $userId): bool
+    {
+        if ($this->approval_status === 'pending') {
+            return false;
+        }
+
+        // Reset BOQ status
+        $this->update([
+            'approval_status' => 'pending',
+            'approval_notes' => null,
+            'approved_at' => null,
+            'approved_by' => null,
+        ]);
+
+        // Reset ALL approvers back to pending
+        if ($this->persetujuan) {
+            $this->persetujuan->approvers()->update([
+                'status' => 'pending',
+                'notes' => null,
+                'action_at' => null,
+            ]);
+        }
+
+        // Log the reset
+        $this->approvalHistory()->create([
+            'user_id' => $userId,
+            'action' => 'reset',
+            'notes' => 'Approval reset by Super Admin',
+        ]);
+
+        return true;
     }
 
     // Relationships
@@ -128,5 +290,15 @@ class BOQ extends Model
     public function items(): HasMany
     {
         return $this->hasMany(BOQItem::class, 'boq_id');
+    }
+
+    public function approvedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'approved_by');
+    }
+
+    public function approvalHistory(): HasMany
+    {
+        return $this->hasMany(BOQApproval::class, 'boq_id')->orderBy('created_at', 'desc');
     }
 }

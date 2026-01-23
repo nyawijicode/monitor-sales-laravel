@@ -112,7 +112,8 @@
 
         .signature-cell {
             display: table-cell;
-            width: 33%;
+            width: 25%;
+            /* Changed from 33% to 25% for 4 columns */
             text-align: center;
             vertical-align: top;
             padding: 10px;
@@ -261,20 +262,39 @@
             </div>
 
             <div class="signature-row">
-                @foreach($boq->persetujuan->approvers->sortBy('pivot.sort_order') as $approver)
-                    <div class="signature-cell">
-                        <div class="title">{{ $approver->pivot->jabatan ?? 'Yang Menyetujui' }}</div>
+                {{-- Pengaju (Creator) --}}
+                <div class="signature-cell">
+                    <div class="title">Pengaju</div>
 
-                        @if($approver->pivot->status === 'approved' && $approver->signature_path)
+                    @if($boq->user->signature)
+                        <div class="signature-img">
+                            <img src="{{ public_path('storage/' . $boq->user->signature) }}" alt="TTD">
+                        </div>
+                        <!-- Debug: {{ $boq->user->signature }} -->
+                    @else
+                        <div class="signature-img"></div>
+                        <!-- Debug: No signature for {{ $boq->user->name }} -->
+                    @endif
+
+                    <div class="name">{{ $boq->user->name }}</div>
+                    <div class="position">{{ $boq->user->userInfo->position->name ?? 'Staff' }}</div>
+                </div>
+
+                {{-- Approvers - Show signature regardless of approval status --}}
+                @foreach($boq->persetujuan->approvers->sortBy('sort_order') as $approver)
+                    <div class="signature-cell">
+                        <div class="title">Yang Menyetujui</div>
+
+                        @if($approver->user->signature)
                             <div class="signature-img">
-                                <img src="{{ public_path('storage/' . $approver->signature_path) }}" alt="TTD">
+                                <img src="{{ public_path('storage/' . $approver->user->signature) }}" alt="TTD">
                             </div>
                         @else
                             <div class="signature-img"></div>
                         @endif
 
-                        <div class="name">{{ $approver->name }}</div>
-                        <div class="position">{{ $approver->userInfo->position->name ?? '' }}</div>
+                        <div class="name">{{ $approver->user->name }}</div>
+                        <div class="position">{{ $approver->user->userInfo->position->name ?? '' }}</div>
                     </div>
                 @endforeach
             </div>
