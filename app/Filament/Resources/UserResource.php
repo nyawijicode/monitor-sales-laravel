@@ -86,6 +86,20 @@ class UserResource extends Resource
                                     ['role_id' => $state]
                                 );
                             }),
+                        Forms\Components\Select::make('permissions')
+                            ->label('Direct Permissions (Overrides Role)')
+                            ->options(\Spatie\Permission\Models\Permission::pluck('name', 'id'))
+                            ->multiple()
+                            ->searchable()
+                            ->preload()
+                            ->saveRelationshipsUsing(function ($record, $state) {
+                                $record->syncPermissions($state);
+                            })
+                            ->afterStateHydrated(function ($component, $record) {
+                                if ($record) {
+                                    $component->state($record->permissions->pluck('id'));
+                                }
+                            }),
                         Forms\Components\Select::make('company_id')
                             ->label('Company')
                             ->options(\App\Models\Company::pluck('name', 'id'))
