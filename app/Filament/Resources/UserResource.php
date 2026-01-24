@@ -53,6 +53,12 @@ class UserResource extends Resource
                         Forms\Components\Toggle::make('is_active')
                             ->required()
                             ->default(true),
+                        Forms\Components\TextInput::make('no_hp')
+                            ->label('Nomor HP')
+                            ->tel()
+                            ->maxLength(20)
+                            ->afterStateHydrated(fn($component, $record) => $component->state($record?->userInfo?->no_hp))
+                            ->saveRelationshipsUsing(fn($record, $state) => $record->userInfo()->updateOrCreate(['user_id' => $record->id], ['no_hp' => $state])),
                     ])->columns(2),
 
                 Section::make('Organization & Access')
@@ -198,6 +204,9 @@ class UserResource extends Resource
                     ->searchable(),
                 Tables\Columns\TextColumn::make('email')
                     ->searchable(),
+                Tables\Columns\TextColumn::make('no_hp')
+                    ->searchable()
+                    ->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\IconColumn::make('is_active')
                     ->boolean()
                     ->toggleable(isToggledHiddenByDefault: true),

@@ -57,7 +57,7 @@ class SalesPanelProvider extends PanelProvider
             ->navigationGroups([
                 NavigationGroup::make('Dasbor')->collapsible(false),
                 NavigationGroup::make('Mapping dan Pipeline')->collapsible(true),
-                NavigationGroup::make('Master Data')->collapsible(true),
+                NavigationGroup::make('Pengaturan')->collapsible(true),
             ]);
     }
 }

@@ -19,6 +19,7 @@ class UserInfo extends Model
         'branch_id',
         'position_id',
         'signature',
+        'no_hp',
     ];
 
     public function user(): BelongsTo

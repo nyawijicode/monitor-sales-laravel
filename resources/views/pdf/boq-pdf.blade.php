@@ -121,7 +121,7 @@
 
         .signature-cell .title {
             font-weight: bold;
-            margin-bottom: 50px;
+            margin-bottom: 10px;
         }
 
         .signature-cell .name {
@@ -175,14 +175,14 @@
         <tr>
             <td>Nomor Visit</td>
             <td>{{ $boq->visit->visit_number }}</td>
-            <td>Email</td>
-            <td>{{ $boq->visit->customer->email ?? '-' }}</td>
+            <td>Email Sales</td>
+            <td>{{ $boq->user->email ?? '-' }}</td>
         </tr>
         <tr>
             <td>Tanggal</td>
             <td>{{ \Carbon\Carbon::parse($boq->visit->visit_date)->format('d/m/Y') }}</td>
-            <td>Kontak</td>
-            <td>{{ $boq->visit->customer->kontak ?? '-' }}</td>
+            <td>Kontak Sales</td>
+            <td>{{ $boq->user->userInfo->no_hp ?? '-' }}</td>
         </tr>
         <tr>
             <td>Customer</td>
@@ -266,28 +266,26 @@
                 <div class="signature-cell">
                     <div class="title">Pengaju</div>
 
-                    @if($boq->user->signature)
+                    @if($boq->user->userInfo && $boq->user->userInfo->signature)
                         <div class="signature-img">
-                            <img src="{{ public_path('storage/' . $boq->user->signature) }}" alt="TTD">
+                            <img src="{{ public_path('storage/' . $boq->user->userInfo->signature) }}" alt="TTD">
                         </div>
-                        <!-- Debug: {{ $boq->user->signature }} -->
                     @else
                         <div class="signature-img"></div>
-                        <!-- Debug: No signature for {{ $boq->user->name }} -->
                     @endif
 
                     <div class="name">{{ $boq->user->name }}</div>
                     <div class="position">{{ $boq->user->userInfo->position->name ?? 'Staff' }}</div>
                 </div>
 
-                {{-- Approvers - Show signature regardless of approval status --}}
+                {{-- Approvers --}}
                 @foreach($boq->persetujuan->approvers->sortBy('sort_order') as $approver)
                     <div class="signature-cell">
                         <div class="title">Yang Menyetujui</div>
 
-                        @if($approver->user->signature)
+                        @if($approver->user->userInfo && $approver->user->userInfo->signature)
                             <div class="signature-img">
-                                <img src="{{ public_path('storage/' . $approver->user->signature) }}" alt="TTD">
+                                <img src="{{ public_path('storage/' . $approver->user->userInfo->signature) }}" alt="TTD">
                             </div>
                         @else
                             <div class="signature-img"></div>
