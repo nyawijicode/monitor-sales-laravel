@@ -250,6 +250,20 @@ class BOQResource extends Resource
                 Tables\Columns\TextColumn::make('total_amount')
                     ->label('Total')
                     ->money('IDR'),
+                Tables\Columns\TextColumn::make('visit.statusAkhir.name')
+                    ->label('Status Akhir')
+                    ->badge()
+                    ->color(fn($state) => match (true) {
+                        str_contains(strtolower($state ?? ''), 'deal') => 'success',
+                        str_contains(strtolower($state ?? ''), 'po') => 'success',
+                        str_contains(strtolower($state ?? ''), 'spk') => 'success',
+                        str_contains(strtolower($state ?? ''), 'lost') => 'danger',
+                        str_contains(strtolower($state ?? ''), 'cancel') => 'danger',
+                        str_contains(strtolower($state ?? ''), 'tolak') => 'danger',
+                        str_contains(strtolower($state ?? ''), 'gagal') => 'danger',
+                        default => 'warning',
+                    })
+                    ->placeholder('-'),
                 Tables\Columns\TextColumn::make('approval_status')
                     ->label('Status Approval')
                     ->badge()

@@ -21,6 +21,7 @@ class BOQ extends Model
         'approval_notes',
         'approved_at',
         'approved_by',
+        'previous_visit_status_id',
     ];
 
     protected $casts = [
@@ -184,6 +185,26 @@ class BOQ extends Model
                 'approved_at' => now(),
                 'approved_by' => $userId, // Last approver
             ]);
+
+            // Update Visit Status to Deal/PO/SPK
+            if ($this->visit) {
+                // Save previous status if not already saved
+                if (is_null($this->previous_visit_status_id)) {
+                    $this->update(['previous_visit_status_id' => $this->visit->status_akhir]);
+                }
+
+                // Find Deal/PO/SPK status
+                // Try to find status that resembles Deal/PO/SPK
+                $dealStatus = \App\Models\CustomerStatus::where(function ($query) {
+                    $query->where('name', 'like', '%Deal%')
+                        ->orWhere('name', 'like', '%PO%')
+                        ->orWhere('name', 'like', '%SPK%');
+                })->first();
+
+                if ($dealStatus) {
+                    $this->visit->update(['status_akhir' => $dealStatus->id]);
+                }
+            }
         }
 
         return true;
@@ -219,6 +240,26 @@ class BOQ extends Model
             'approved_by' => $userId,
         ]);
 
+        // Update Visit Status to Lost
+        if ($this->visit) {
+            // Save previous status if not already saved
+            if (is_null($this->previous_visit_status_id)) {
+                $this->update(['previous_visit_status_id' => $this->visit->status_akhir]);
+            }
+
+            // Find Lost status
+            $lostStatus = \App\Models\CustomerStatus::where(function ($query) {
+                $query->where('name', 'like', '%Lost%')
+                    ->orWhere('name', 'like', '%Gagal%')
+                    ->orWhere('name', 'like', '%Cancel%')
+                    ->orWhere('name', 'like', '%Tolak%');
+            })->first();
+
+            if ($lostStatus) {
+                $this->visit->update(['status_akhir' => $lostStatus->id]);
+            }
+        }
+
         // Log the rejection
         $this->approvalHistory()->create([
             'user_id' => $userId,
@@ -243,6 +284,12 @@ class BOQ extends Model
             'approved_at' => null,
             'approved_by' => null,
         ]);
+
+        // Revert Visit Status if it was changed
+        if ($this->visit && !is_null($this->previous_visit_status_id)) {
+            $this->visit->update(['status_akhir' => $this->previous_visit_status_id]);
+            $this->update(['previous_visit_status_id' => null]);
+        }
 
         // Reset ALL approvers back to pending
         $this->approvers()->update([
