@@ -18,6 +18,21 @@ class EditBOQ extends EditRecord
         ];
     }
 
+    public function mount(int | string $record): void
+    {
+        parent::mount($record);
+
+        if ($this->record->hasAnyApprovalAction()) {
+            \Filament\Notifications\Notification::make()
+                ->title('Akses Ditolak')
+                ->body('BOQ yang sudah dalam proses approval tidak dapat diedit. Silakan reset approval terlebih dahulu.')
+                ->danger()
+                ->send();
+
+            $this->redirect($this->getResource()::getUrl('view', ['record' => $record]));
+        }
+    }
+
     protected function getRedirectUrl(): string
     {
         return $this->getResource()::getUrl('index');

@@ -130,6 +130,14 @@ class BOQ extends Model
         return "{$approvedCount}/{$totalApprovers}";
     }
 
+    // Check if ANY approval action has been taken (approved/rejected)
+    public function hasAnyApprovalAction(): bool
+    {
+        return $this->approvers()
+            ->where('status', '!=', 'pending')
+            ->exists();
+    }
+
     // Check if current user can approve this BOQ
     public function canBeApproved(?int $userId = null): bool
     {

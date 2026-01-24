@@ -448,7 +448,8 @@ class BOQResource extends Resource
                         ]);
                     }),
 
-                Tables\Actions\EditAction::make(),
+                Tables\Actions\EditAction::make()
+                    ->visible(fn(BOQ $record): bool => !$record->hasAnyApprovalAction()),
                 Tables\Actions\ViewAction::make(),
             ])
             ->bulkActions([
