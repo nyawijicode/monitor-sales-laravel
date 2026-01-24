@@ -82,6 +82,36 @@ class AfterSalesResource extends Resource
                             ->label('Catatan')
                             ->columnSpanFull(),
                     ])->columns(2),
+
+                Forms\Components\Section::make('Status Approval')
+                    ->schema([
+                        Forms\Components\Placeholder::make('approvers_list')
+                            ->label('Daftar Approver')
+                            ->content(function (?AfterSales $record): \Illuminate\Support\HtmlString {
+                                if (!$record || $record->approvers->isEmpty()) {
+                                    return new \Illuminate\Support\HtmlString('<em>Tidak ada approval workflow</em>');
+                                }
+
+                                $html = '<ul style="margin: 0; padding-left: 20px;">';
+                                foreach ($record->approvers as $approver) {
+                                    $icon = match ($approver->status) {
+                                        'approved' => '✅',
+                                        'rejected' => '❌',
+                                        default => '⏳',
+                                    };
+                                    $statusText = match ($approver->status) {
+                                        'approved' => '<strong style="color: green;">Disetujui</strong>',
+                                        'rejected' => '<strong style="color: red;">Ditolak</strong>',
+                                        default => '<em style="color: gray;">Menunggu</em>',
+                                    };
+                                    $name = $approver->user->name ?? '-';
+                                    $html .= "<li>{$icon} {$name} - {$statusText}</li>";
+                                }
+                                $html .= '</ul>';
+                                return new \Illuminate\Support\HtmlString($html);
+                            }),
+                    ])
+                    ->visible(fn(?AfterSales $record) => $record && $record->approvers()->exists()),
             ]);
     }
 
@@ -103,13 +133,31 @@ class AfterSalesResource extends Resource
                         default => 'gray',
                     }),
 
-                Tables\Columns\TextColumn::make('warranty_status')
-                    ->label('Garansi')
+                Tables\Columns\TextColumn::make('approval_status_display')
+                    ->label('Status Garansi')
                     ->badge()
-                    ->color(fn(string $state): string => match ($state) {
-                        'draft' => 'gray',
-                        'approved' => 'success',
-                        default => 'gray',
+                    ->color(function (AfterSales $record): string {
+                        if ($record->warranty_status === 'rejected') return 'danger';
+                        if ($record->warranty_status === 'approved') return 'success';
+
+                        $approvers = $record->approvers;
+                        if ($approvers->count() > 0) {
+                            $approved = $approvers->where('status', 'approved')->count();
+                            if ($approved > 0) return 'warning';
+                            return 'info';
+                        }
+
+                        return 'gray';
+                    })
+                    ->formatStateUsing(function (AfterSales $record): string {
+                        if ($record->approvers->count() === 0) return 'Draft/No Workflow';
+
+                        $progress = $record->getApprovalProgress();
+                        return match ($record->warranty_status) {
+                            'approved' => "Disetujui ($progress)",
+                            'rejected' => 'Ditolak',
+                            default => "Menunggu ($progress)",
+                        };
                     }),
 
                 Tables\Columns\TextColumn::make('created_at')
@@ -121,6 +169,54 @@ class AfterSalesResource extends Resource
                 //
             ])
             ->actions([
+                Tables\Actions\Action::make('approve')
+                    ->label('Setujui Garansi')
+                    ->icon('heroicon-o-check-circle')
+                    ->color('success')
+                    ->form([
+                        Forms\Components\Textarea::make('notes')
+                            ->label('Keterangan (Opsional)')
+                            ->rows(3)
+                            ->maxLength(1000),
+                    ])
+                    ->action(function (AfterSales $record, array $data) {
+                        if ($record->approve(auth()->id(), $data['notes'] ?? null)) {
+                            \Filament\Notifications\Notification::make()
+                                ->title('Garansi Disetujui')
+                                ->success()
+                                ->send();
+                        } else {
+                            \Filament\Notifications\Notification::make()
+                                ->title('Gagal Menyetujui')
+                                ->body('Anda tidak memiliki akses.')
+                                ->danger()
+                                ->send();
+                        }
+                    })
+                    ->requiresConfirmation()
+                    ->visible(fn(AfterSales $record) => $record->canBeApproved()),
+
+                Tables\Actions\Action::make('reject')
+                    ->label('Tolak Garansi')
+                    ->icon('heroicon-o-x-circle')
+                    ->color('danger')
+                    ->form([
+                        Forms\Components\Textarea::make('notes')
+                            ->label('Keterangan (Wajib)')
+                            ->required()
+                            ->rows(3),
+                    ])
+                    ->action(function (AfterSales $record, array $data) {
+                        if ($record->reject(auth()->id(), $data['notes'])) {
+                            \Filament\Notifications\Notification::make()
+                                ->title('Garansi Ditolak')
+                                ->success()
+                                ->send();
+                        }
+                    })
+                    ->requiresConfirmation()
+                    ->visible(fn(AfterSales $record) => $record->canBeApproved()),
+
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\ViewAction::make(),
             ])

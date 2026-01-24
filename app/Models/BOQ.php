@@ -2,12 +2,22 @@
 
 namespace App\Models;
 
+use App\Interfaces\HasApprovalWorkflow;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-class BOQ extends Model
+class BOQ extends Model implements HasApprovalWorkflow
 {
+    public static function getApprovalType(): string
+    {
+        return 'BOQ';
+    }
+
+    public static function getApprovalLabel(): string
+    {
+        return 'BOQ (RAB & Penawaran)';
+    }
     protected $table = 'boqs';
 
     protected $fillable = [

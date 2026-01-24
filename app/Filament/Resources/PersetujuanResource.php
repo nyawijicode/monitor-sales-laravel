@@ -35,6 +35,12 @@ class PersetujuanResource extends Resource
                             ->label('Company Context')
                             ->relationship('company', 'name')
                             ->required(),
+                        Forms\Components\Select::make('name')
+                            ->label('Tipe Dokumen / Resource')
+                            ->options(\App\Helpers\ApprovalHelper::getApprovalTypes())
+                            ->default('BOQ')
+                            ->required()
+                            ->native(false),
                     ])->columns(2),
 
                 Forms\Components\Section::make('Workflow Configuration')
@@ -61,6 +67,11 @@ class PersetujuanResource extends Resource
             ->columns([
                 Tables\Columns\TextColumn::make('user.name')
                     ->label('Requester')
+                    ->searchable(),
+                Tables\Columns\TextColumn::make('name')
+                    ->label('Type')
+                    ->badge()
+                    ->color('info')
                     ->searchable(),
                 Tables\Columns\TextColumn::make('company.name')
                     ->label('Company')

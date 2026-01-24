@@ -13,6 +13,8 @@ class PersetujuanApprover extends Model
     protected $fillable = [
         'persetujuan_id',
         'boq_id',
+        'sales_order_id',
+        'after_sales_id',
         'user_id',
         'sort_order',
         'status',
@@ -37,5 +39,15 @@ class PersetujuanApprover extends Model
     public function boq(): BelongsTo
     {
         return $this->belongsTo(BOQ::class);
+    }
+
+    public function salesOrder(): BelongsTo
+    {
+        return $this->belongsTo(SalesOrder::class);
+    }
+
+    public function afterSales(): BelongsTo
+    {
+        return $this->belongsTo(AfterSales::class);
     }
 }

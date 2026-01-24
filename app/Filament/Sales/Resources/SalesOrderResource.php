@@ -52,6 +52,7 @@ class SalesOrderResource extends Resource
                                 'draft' => 'Draft',
                                 'submitted' => 'Submitted (Menunggu Approval)',
                                 'approved' => 'Approved (Siap Proses)',
+                                'rejected' => 'Rejected (Ditolak)',
                                 'in_accounting' => 'Proses Accounting',
                                 'paid_dp' => 'DP Lunas',
                                 'completed' => 'Lunas',
@@ -102,6 +103,36 @@ class SalesOrderResource extends Resource
                             ->columnSpanFull(),
                     ])
                     ->collapsed(),
+
+                Forms\Components\Section::make('Status Approval')
+                    ->schema([
+                        Forms\Components\Placeholder::make('approvers_list')
+                            ->label('Daftar Approver')
+                            ->content(function (?SalesOrder $record): \Illuminate\Support\HtmlString {
+                                if (!$record || $record->approvers->isEmpty()) {
+                                    return new \Illuminate\Support\HtmlString('<em>Tidak ada approval workflow</em>');
+                                }
+
+                                $html = '<ul style="margin: 0; padding-left: 20px;">';
+                                foreach ($record->approvers as $approver) {
+                                    $icon = match ($approver->status) {
+                                        'approved' => '✅',
+                                        'rejected' => '❌',
+                                        default => '⏳',
+                                    };
+                                    $statusText = match ($approver->status) {
+                                        'approved' => '<strong style="color: green;">Disetujui</strong>',
+                                        'rejected' => '<strong style="color: red;">Ditolak</strong>',
+                                        default => '<em style="color: gray;">Menunggu</em>',
+                                    };
+                                    $name = $approver->user->name ?? '-';
+                                    $html .= "<li>{$icon} {$name} - {$statusText}</li>";
+                                }
+                                $html .= '</ul>';
+                                return new \Illuminate\Support\HtmlString($html);
+                            }),
+                    ])
+                    ->visible(fn(?SalesOrder $record) => $record && $record->approvers()->exists()),
             ]);
     }
 
@@ -129,21 +160,94 @@ class SalesOrderResource extends Resource
                         'draft' => 'gray',
                         'submitted' => 'warning',
                         'approved' => 'success',
+                        'rejected' => 'danger',
                         'in_accounting' => 'info',
                         'paid_dp' => 'success',
                         'completed' => 'primary',
                         default => 'gray',
                     }),
 
-                Tables\Columns\TextColumn::make('created_at')
-                    ->dateTime('d/m/Y H:i')
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
+                Tables\Columns\TextColumn::make('approval_status_display')
+                    ->label('Status Approval')
+                    ->badge()
+                    ->color(function (SalesOrder $record): string {
+                        if ($record->status === 'rejected') return 'danger';
+                        if ($record->status === 'approved') return 'success';
+
+                        // Pending - check if partial approval
+                        $approvers = $record->approvers;
+                        if ($approvers->count() > 0) {
+                            $approved = $approvers->where('status', 'approved')->count();
+                            if ($approved > 0) return 'warning'; // Partial approval
+                            return 'info'; // Waiting
+                        }
+
+                        return 'gray'; // No approval workflow
+                    })
+                    ->formatStateUsing(function (SalesOrder $record): string {
+                        if ($record->approvers->count() === 0) return '-';
+
+                        $progress = $record->getApprovalProgress();
+                        return match ($record->status) {
+                            'submitted' => "Menunggu ($progress)",
+                            'approved' => "Disetujui ($progress)",
+                            'rejected' => 'Ditolak',
+                            default => $record->status, // draft etc
+                        };
+                    }),
             ])
             ->filters([
                 //
             ])
             ->actions([
+                Tables\Actions\Action::make('approve')
+                    ->label('Setujui')
+                    ->icon('heroicon-o-check-circle')
+                    ->color('success')
+                    ->form([
+                        Forms\Components\Textarea::make('notes')
+                            ->label('Keterangan (Opsional)')
+                            ->rows(3)
+                            ->maxLength(1000),
+                    ])
+                    ->action(function (SalesOrder $record, array $data) {
+                        if ($record->approve(auth()->id(), $data['notes'] ?? null)) {
+                            \Filament\Notifications\Notification::make()
+                                ->title('Sales Order Disetujui')
+                                ->success()
+                                ->send();
+                        } else {
+                            \Filament\Notifications\Notification::make()
+                                ->title('Gagal Menyetujui')
+                                ->body('Anda tidak memiliki akses.')
+                                ->danger()
+                                ->send();
+                        }
+                    })
+                    ->requiresConfirmation()
+                    ->visible(fn(SalesOrder $record) => $record->canBeApproved()),
+
+                Tables\Actions\Action::make('reject')
+                    ->label('Tolak')
+                    ->icon('heroicon-o-x-circle')
+                    ->color('danger')
+                    ->form([
+                        Forms\Components\Textarea::make('notes')
+                            ->label('Keterangan (Wajib)')
+                            ->required()
+                            ->rows(3),
+                    ])
+                    ->action(function (SalesOrder $record, array $data) {
+                        if ($record->reject(auth()->id(), $data['notes'])) {
+                            \Filament\Notifications\Notification::make()
+                                ->title('Sales Order Ditolak')
+                                ->success()
+                                ->send();
+                        }
+                    })
+                    ->requiresConfirmation()
+                    ->visible(fn(SalesOrder $record) => $record->canBeApproved()),
+
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\ViewAction::make(),
             ])

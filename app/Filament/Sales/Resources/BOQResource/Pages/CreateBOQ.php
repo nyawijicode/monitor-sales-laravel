@@ -26,6 +26,7 @@ class CreateBOQ extends CreateRecord
         // Find persetujuan template for this user + company
         $persetujuan = \App\Models\Persetujuan::where('user_id', $userId)
             ->where('company_id', $companyId)
+            ->where('name', 'BOQ')
             ->first();
 
         // If persetujuan exists, link it and clone approvers
