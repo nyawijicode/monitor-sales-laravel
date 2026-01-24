@@ -96,31 +96,33 @@ class BOQ extends Model
         $this->update(['total_amount' => $total]);
     }
 
+    // Get BOQ-specific approvers (not template approvers)
+    public function approvers(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(PersetujuanApprover::class, 'boq_id')->orderBy('sort_order');
+    }
+
     // Check if BOQ is fully approved (ALL approvers must approve)
     public function isFullyApproved(): bool
     {
-        if (!$this->persetujuan) {
+        $totalApprovers = $this->approvers()->count();
+        if ($totalApprovers === 0) {
             return false;
         }
 
         // Check if ALL approvers have approved
-        $totalApprovers = $this->persetujuan->approvers()->count();
-        $approvedCount = $this->persetujuan->approvers()
+        $approvedCount = $this->approvers()
             ->where('status', 'approved')
             ->count();
 
-        return $totalApprovers > 0 && $totalApprovers === $approvedCount;
+        return $totalApprovers === $approvedCount;
     }
 
     // Get approval progress (e.g., "2/3 approved")
     public function getApprovalProgress(): string
     {
-        if (!$this->persetujuan) {
-            return '0/0';
-        }
-
-        $totalApprovers = $this->persetujuan->approvers()->count();
-        $approvedCount = $this->persetujuan->approvers()
+        $totalApprovers = $this->approvers()->count();
+        $approvedCount = $this->approvers()
             ->where('status', 'approved')
             ->count();
 
@@ -137,13 +139,8 @@ class BOQ extends Model
             return false;
         }
 
-        // Must have persetujuan
-        if (!$this->persetujuan) {
-            return false;
-        }
-
         // Check if user is one of the approvers AND hasn't taken action yet
-        $approver = $this->persetujuan->approvers()
+        $approver = $this->approvers()
             ->where('user_id', $userId)
             ->first();
 
@@ -158,7 +155,7 @@ class BOQ extends Model
         }
 
         // Update specific approver status
-        $approver = $this->persetujuan->approvers()
+        $approver = $this->approvers()
             ->where('user_id', $userId)
             ->first();
 
@@ -200,7 +197,7 @@ class BOQ extends Model
         }
 
         // Update specific approver status
-        $approver = $this->persetujuan->approvers()
+        $approver = $this->approvers()
             ->where('user_id', $userId)
             ->first();
 
@@ -248,13 +245,11 @@ class BOQ extends Model
         ]);
 
         // Reset ALL approvers back to pending
-        if ($this->persetujuan) {
-            $this->persetujuan->approvers()->update([
-                'status' => 'pending',
-                'notes' => null,
-                'action_at' => null,
-            ]);
-        }
+        $this->approvers()->update([
+            'status' => 'pending',
+            'notes' => null,
+            'action_at' => null,
+        ]);
 
         // Log the reset
         $this->approvalHistory()->create([

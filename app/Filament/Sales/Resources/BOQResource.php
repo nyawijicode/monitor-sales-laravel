@@ -109,11 +109,15 @@ class BOQResource extends Resource
                         Forms\Components\Placeholder::make('approvers_list')
                             ->label('Daftar Approver')
                             ->content(function (?BOQ $record): \Illuminate\Support\HtmlString {
-                                if (!$record || !$record->persetujuan) {
+                                if (!$record) {
                                     return new \Illuminate\Support\HtmlString('<em>Tidak ada persetujuan</em>');
                                 }
 
-                                $approvers = $record->persetujuan->approvers()->orderBy('sort_order')->get();
+                                $approvers = $record->approvers;
+                                if ($approvers->isEmpty()) {
+                                    return new \Illuminate\Support\HtmlString('<em>Tidak ada approver</em>');
+                                }
+
                                 $html = '<ul style="margin: 0; padding-left: 20px;">';
 
                                 foreach ($approvers as $approver) {
@@ -134,7 +138,7 @@ class BOQResource extends Resource
                                 $html .= '</ul>';
                                 return new \Illuminate\Support\HtmlString($html);
                             })
-                            ->visible(fn(?BOQ $record): bool => $record && $record->persetujuan),
+                            ->visible(fn(?BOQ $record): bool => $record !== null),
 
                         Forms\Components\Placeholder::make('approved_by_display')
                             ->label('Disetujui/Ditolak Oleh')
@@ -217,6 +221,7 @@ class BOQResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
+            ->modifyQueryUsing(fn($query) => $query->with(['persetujuan.approvers']))
             ->columns([
                 Tables\Columns\TextColumn::make('boq_number')
                     ->label('Nomor BOQ')

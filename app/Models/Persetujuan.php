@@ -39,6 +39,9 @@ class Persetujuan extends Model
 
     public function approvers(): \Illuminate\Database\Eloquent\Relations\HasMany
     {
-        return $this->hasMany(PersetujuanApprover::class)->orderBy('sort_order');
+        // Only get template approvers (not linked to specific BOQ)
+        return $this->hasMany(PersetujuanApprover::class)
+            ->whereNull('boq_id')
+            ->orderBy('sort_order');
     }
 }
