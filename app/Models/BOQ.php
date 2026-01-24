@@ -322,6 +322,11 @@ class BOQ extends Model
         return $this->belongsTo(Visit::class);
     }
 
+    public function salesOrder(): \Illuminate\Database\Eloquent\Relations\HasOne
+    {
+        return $this->hasOne(SalesOrder::class);
+    }
+
     public function company(): BelongsTo
     {
         return $this->belongsTo(\App\Models\Company::class);
