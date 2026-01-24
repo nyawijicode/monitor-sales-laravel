@@ -244,7 +244,8 @@ class BOQResource extends Resource
                 Tables\Columns\TextColumn::make('items.nama_barang')
                     ->label('Nama Barang')
                     ->listWithLineBreaks()
-                    ->bulleted(),
+                    ->bulleted()
+                    ->searchable(),
                 Tables\Columns\TextColumn::make('total_amount')
                     ->label('Total')
                     ->money('IDR'),
