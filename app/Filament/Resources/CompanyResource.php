@@ -5,6 +5,7 @@ namespace App\Filament\Resources;
 use App\Filament\Resources\CompanyResource\Pages;
 use App\Models\Company;
 use Filament\Forms;
+use Filament\Forms\Components\Textarea;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
@@ -26,7 +27,7 @@ class CompanyResource extends Resource
                         Forms\Components\TextInput::make('name')
                             ->required()
                             ->maxLength(255),
-                        Forms\Components\TextArea::make('address')
+                        Textarea::make('address')
                             ->label('Alamat Perusahaan')
                             ->maxLength(500)
                             ->nullable(),
